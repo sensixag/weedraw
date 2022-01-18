@@ -31,7 +31,6 @@ __pycache__/
 *.mbtiles
 *.pb.cc
 *.pb.h
-*.png
 *.prj
 *.pyc
 *~
