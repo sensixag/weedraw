@@ -15,15 +15,6 @@ docs/latex
 #Settings
 *.env
 
-#Images
-*.jpeg
-*.jpg
-*.JPG
-*.kml
-*.tif
-*.TIF
-*.tiff
-
 #Generated
 __pycache__/
 
