@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+tensorflow = "*"
+numpy = "*"
+notebook = "*"
+opencv-contrib-python = "*"
+scipy = "*"
+matplotlib = "*"
+ipython = "*"
+jedi = "==0.17.2"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
