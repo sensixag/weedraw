@@ -65,7 +65,6 @@ class Interface(tk.Frame):
         self.name_reference_binary = ""
         self.name_reference_neural = ""
         self.slider_pencil = 10
-        self.slider_opacity = 5
         self.color_frame_over_center = "black"
         self.pencil_draw = True
         self.polygon_draw = False
@@ -233,6 +232,7 @@ class Interface(tk.Frame):
         self.color_buttons_center = "white"
         self.background_slider = "#414851"
         self.intern_slider = "#5a636f"
+        self.slider_opacity = 20
 
         self.frame_ground = tk.Frame(root)
         self.frame_ground.place(relx=0.0, rely=0.0, relheight=1350, relwidth=740)
@@ -294,7 +294,13 @@ class Interface(tk.Frame):
             highlightbackground=self.background_slider,
         )
 
-        self.slider_contourn = tk.Scale(self.frame_of_options, from_=0.0, to=100.0)
+        self.slider_contourn = tk.Scale(
+            self.frame_of_options,
+            from_=0.0,
+            to=100.0,
+            command=self.slider_changed_draw,
+            variable=self.current_value_draw,
+        )
         self.slider_contourn.place(relx=0.098, rely=0.279, relheight=0.062, relwidth=0.8)
         self.slider_contourn.configure(
             length="164",
@@ -364,6 +370,19 @@ class Interface(tk.Frame):
         self.percent_txt.configure(activebackground="#f9f9f9")
 
         self.current_value_opacity.set(5.0)
+        self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
+        self.canvas.pack()
+        print("self.img_canvas_id : ", self.img_canvas_id)
+
+    def load_image_in_screen(self, img):
+        img = cv2.resize(img, (self.screen_width, self.screen_height))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        self.image_original = img.copy()
+        img = PIL.Image.fromarray(img)
+
+        self.image_front = ImageTk.PhotoImage(img)
+
+        return self.image_front
 
     def labelling_menu(self):
 
@@ -551,26 +570,23 @@ class Interface(tk.Frame):
         if self.slider_pencil < 10:
             self.slider_pencil = 10
 
-        return "{: .2f}".format(self.current_value_draw.get())
+        # return "{: .2f}".format(self.current_value_draw.get())
 
     def get_current_value_opacity(self):
 
-        if self.current_value_opacity.get() == 1:
+        if self.current_value_opacity.get() <= 20:
             self.slider_opacity = "gray12"
 
-        elif self.current_value_opacity.get() == 2:
+        elif self.current_value_opacity.get() <= 40 and self.current_value_opacity.get() > 20:
             self.slider_opacity = "gray25"
 
-        elif self.current_value_opacity.get() == 3:
+        elif self.current_value_opacity.get() <= 60 and self.current_value_opacity.get() > 40:
             self.slider_opacity = "gray50"
 
-        elif self.current_value_opacity.get() == 4:
+        elif self.current_value_opacity.get() <= 80 and self.current_value_opacity.get() > 60:
             self.slider_opacity = "gray75"
 
-        else:
-            self.slider_opacity = None
-
-        return "{: .2f}".format(self.current_value_opacity.get())
+        # return "{: .2f}".format(self.current_value_opacity.get())
 
     def slider_changed_opacity(self, event):
         self.label_opacity.configure(text=self.get_current_value_opacity())
@@ -614,7 +630,7 @@ class Interface(tk.Frame):
         self.img_canvas_id = self.canvas.create_image(
             self.screen_width // 2, self.screen_height // 2, image=self.image_tk, anchor=tk.CENTER
         )
-        # print(self.img_canvas_id)
+        print("self.img_canvas_id dir: ", self.img_canvas_id)
         self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
         self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
 
@@ -709,6 +725,7 @@ class Interface(tk.Frame):
             self.labelling_start()
             self.remove_buttons("Draw Menu")
             self.name_tif = '"' + self.name_tif + '"'
+
             if self.load_progress():
 
                 if str(self.directory_saved) == str((self.name_tif)):
@@ -746,7 +763,7 @@ class Interface(tk.Frame):
             self.daninha_1 = gdal.Open(self.reference_binary)
             self.daninha_band_1 = self.daninha_1.GetRasterBand(1)
 
-            self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
+            self.draw_img = PIL.Image.new("RGB", (self.screen_width, self.screen_height), (0, 0, 0))
             self.draw_line = ImageDraw.Draw(self.draw_img)
             self.cnt_validator = []
 
@@ -784,10 +801,7 @@ class Interface(tk.Frame):
                 yscrollcommand=yscroll.set,
             )
 
-            # self.canvas = tk.Canvas(frame, bd=0, xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
             self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-            # xscroll.config(command=self.canvas.xview)
-            # yscroll.config(command=self.canvas.yview)
             self.frame.pack(expand=1)
 
             self.next_icon = PhotoImage(file=r"icons/next.png")
@@ -801,6 +815,8 @@ class Interface(tk.Frame):
             self.back_btn.place(relx=0.031, rely=0.363, height=83, width=43)
             self.back_btn.configure(borderwidth="2")
             self.back_btn.bind("<Button-1>", partial(self.change_dir, key="0"))
+
+            self.image_tk = self.load_image_in_screen(np.zeros(self.screen_width, self.screen_width, 3))
 
     def run(self):
         self.labelling_start()
@@ -916,10 +932,8 @@ class Interface(tk.Frame):
                 yscrollcommand=yscroll.set,
             )
 
-            # self.canvas = tk.Canvas(frame, bd=0, xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
             self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-            # xscroll.config(command=self.canvas.xview)
-            # yscroll.config(command=self.canvas.yview)
+
             frame.pack(expand=1)
             self.next_icon = PhotoImage(file=r"icons/next.png")
             self.next_btn = tk.Button(root, image=self.next_icon)
@@ -998,24 +1012,13 @@ class Interface(tk.Frame):
                 )
                 self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
                 self.dst_img.FlushCache()
-                # self.bool_draw = False
 
                 self.draw_img = PIL.Image.new("RGB", (self.screen_width, self.screen_height), (0, 0, 0))
                 self.draw_line = ImageDraw.Draw(self.draw_img)
-                self.current_points_bkp.clear()
-                self.current_points.clear()
-                self.canvas.delete("oval")
-                self.canvas.delete("line")
-                self.canvas.delete("simple_line")
-                self.canvas.delete("poly")
-                self.cnt_validator = []
-                # self.canvas.delete(self.line_obj)
-
-                self.draw_lines_array.clear()
-                self.features_polygons.clear()
 
             del self.draw_lines_array
             del self.features_polygons
+
             self.draw_lines_array = []
             self.features_polygons = [[]]
 
@@ -1090,17 +1093,14 @@ class Interface(tk.Frame):
             while cv2.countNonZero(self.daninha_parcela) <= self.iterator_x * self.iterator_y * self.background_percent:
                 if self.x_crop - self.iterator_x < self.mosaico.RasterXSize:
                     self.x_crop -= self.iterator_x * self.iterator_recoil
-                    # print('key 0 - if 1')
 
                     if self.x_crop <= 0:
                         self.x_crop = self.x_max
                         self.y_crop -= self.iterator_y * self.iterator_recoil
-                        # print('key 0 - if 2')
 
                 if self.y_crop - self.iterator_y > self.mosaico.RasterYSize:
                     self.x_crop = 0
                     self.y_crop -= self.iterator_y * self.iterator_recoil
-                    # print('aqui2')
 
                 self.daninha_parcela = self.daninha_band_1.ReadAsArray(
                     self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
@@ -1118,21 +1118,21 @@ class Interface(tk.Frame):
         redparcela = self.red.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
         self.imgparcela = cv2.merge((blueparcela, greenparcela, redparcela))
         self.imgparcela[self.daninha_parcela == 0] = 0
+        self.image_original = self.imgparcela.copy()
 
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
         self.image_tk = ImageTk.PhotoImage(self.img_array_tk)
         self.first_click = True
         self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        self.img_canvas_id = self.canvas.create_image(
-            self.screen_width // 2, self.screen_height // 2, image=self.image_tk, anchor=tk.CENTER
-        )
+        self.prepare_img(self.img_array_tk)
         self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
         self.canvas.bind("<Button-1>", self.get_x_and_y)
         self.canvas.bind("<Button 3>", self.right_click)
         self.canvas.bind("<B1-Motion>", self.draw_smth)
-        # cv2.countNonZero(self.save_draw_array)
+
+        del self.image
 
     def right_click(self, event):
         self.current_points.clear()
@@ -1142,150 +1142,46 @@ class Interface(tk.Frame):
         self.lasx, self.lasy = event.x, event.y
         if self.polygon_draw:
             self.current_points.append((self.lasx, self.lasy))
-            self.current_points_bkp.append((self.lasx, self.lasy))
-            # print(self.current_points)
-            for pt in self.current_points:
-                x, y = pt
-                x1, y1 = (x - 1), (y - 1)
-                x2, y2 = (x + 1), (y + 1)
-                self.vertices_ids = self.canvas.create_oval(
-                    x1, y1, x2, y2, fill="blue", outline="blue", width=3, tags="oval"
-                )
-                self.vertices_ids_array.append(self.vertices_ids)
-
             number_points = len(self.current_points)
+
             if number_points > 2:
-                self.polygons_ids = self.canvas.create_polygon(
-                    self.current_points, fill="red", outline="", width=2, stipple=self.slider_opacity, tags="poly"
-                )
-                # self.draw_line.polygon((self.current_points), fill='white', outline='white')
-                self.features_polygons.extend([[self.count_feature, self.polygons_ids, ((self.lasx, self.lasy))]])
-                self.polygons_ids_array.append(self.polygons_ids)
-                # print(self.features_polygons)
+                self.draw_line.polygon((self.current_points), fill="white", outline="white")
 
             elif number_points == 2:
-                self.polygons_ids = self.canvas.create_line(self.current_points, fill="", tags="simple_line")
-                self.features_polygons.extend([[self.count_feature, self.polygons_ids, ((self.lasx, self.lasy))]])
-                self.polygons_ids_array.append(self.polygons_ids)
-
-            elif number_points < 2:
-                # self.polygons_ids= self.canvas.create_line(self.current_points)
-                self.features_polygons.extend([[self.count_feature, 1, ((self.lasx, self.lasy))]])
-                self.polygons_ids_array.append(self.vertices_ids_array)
+                self.draw_line.line((self.lasx, self.lasy, event.x, event.y), (255, 0, 0), width=5, joint="curve")
 
             self.bool_draw = True
 
     def draw_smth(self, event):
         if self.pencil_draw:
             self.lasx, self.lasy = event.x, event.y
-            self.line_obj = self.canvas.create_line(
-                (self.lasx, self.lasy, event.x, event.y),
-                fill="red",
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                width=int(self.slider_pencil),
-                smooth=True,
-                splinesteps=12,
-                dash=(3, 5),
-                stipple=self.slider_opacity,
-                tags="line",
-            )
 
             self.draw_line.line(
-                (self.lasx, self.lasy, event.x, event.y), (255, 255, 255), width=int(self.slider_pencil), joint="curve"
+                (self.lasx, self.lasy, event.x, event.y), (255, 0, 0), width=int(self.slider_pencil), joint="curve"
             )
             Offset = (int(self.slider_pencil)) / 2
             self.draw_line.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (255, 255, 255)
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (255, 0, 0)
             )
-
-            clicks_ids = [[self.line_obj, self.lasx, self.lasy]]
-            self.draw_lines_array.extend(clicks_ids)
-            # print(self.draw_lines_array)
+            self.prepare_img(self.draw_img)
 
         elif not self.pencil_draw and not self.polygon_draw:
             self.lasx, self.lasy = event.x, event.y
-            for i in range(1, len(self.draw_lines_array[:][:]), 1):
-                if (
-                    self.lasx - self.slider_pencil <= self.draw_lines_array[:][i][1]
-                    and self.lasx + self.slider_pencil > self.draw_lines_array[:][i][1]
-                    and self.lasy - self.slider_pencil <= self.draw_lines_array[:][i][2]
-                    and self.lasy + self.slider_pencil > self.draw_lines_array[:][i][2]
-                ):
 
-                    try:
-                        self.canvas.delete(self.draw_lines_array[:][i][0])
-                        self.draw_line.line(
-                            (self.lasx, self.lasy, event.x, event.y),
-                            (0, 0, 0),
-                            width=int(self.slider_pencil),
-                            joint="curve",
-                        )
-                        Offset = (int(self.slider_pencil)) / 2
-                        self.draw_line.ellipse(
-                            (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (0, 0, 0)
-                        )
-
-                    except:
-                        pass
-
-            for i in range(1, len(self.features_polygons), 1):
-                # print('valor poly : ', self.features_polygons, self.features_polygons[i], end='\n')
-                if (
-                    self.lasx - 10 <= self.features_polygons[i][2][0]
-                    and self.lasx + 10 > self.features_polygons[i][2][0]
-                    and self.lasy - 10 <= self.features_polygons[i][2][1]
-                    and self.lasy + 10 > self.features_polygons[i][2][1]
-                ):
-                    self.canvas.delete(self.features_polygons[i][1])
-                    self.canvas.delete("oval")
-                    self.canvas.delete("simple_line")
-                    self.canvas.delete(self.features_polygons[i][0])
-                    self.features_polygons.pop(i)
-            # self.save_draw_array = np.asarray(self.draw_img)
-            # self.save_draw_array = nf.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
+            self.draw_line.line((self.lasx, self.lasy, event.x, event.y), (0, 0, 0), width=20, joint="curve")
+            Offset = int(self.slider_pencil / 2)
+            self.draw_line.ellipse(
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (0, 0, 0)
+            )
             self.bool_draw = True
+            self.prepare_img(self.draw_img)
 
-    def printcoords(self, event):
-
-        cx, cy = self.event2canvas(event, self.canvas)
-        self.ctn = []
-        if self.first_click == True:
-
-            for i in range(0, len(self.contours)):
-                self.cnt_validator.append(False)
-                self.img_fit = cv2.fillPoly(self.dif, pts=self.contours, color=(0, 0, 0))
-
-            # print("False")
-            self.first_click = False
-
-        for i in range(0, len(self.cnt_validator)):
-            r = cv2.pointPolygonTest(self.contours[i], (cx, cy), False)
-            # print(r)
-            if r > 0:
-                self.cnt_validator[i] = not self.cnt_validator[i]
-                # print("Selected contour ", i)
-                self.ctn = self.contours[i]
-
-                if self.cnt_validator[i] == True:
-                    self.draw = cv2.drawContours(self.img_rgb, self.ctn, -1, (0, 255, 0), 3)
-                    self.img_fit = cv2.fillPoly(self.dif, pts=[self.ctn], color=(255, 255, 255))
-
-                    union_ref_checker = nf.diff_contourns(self, self.img_binary, self.img_fit)[0]
-                    # self.dst_img.GetRasterBand(1).WriteArray(union_ref_checker, xoff=self.x_crop, yoff=self.y_crop)
-                    # self.dst_img.FlushCache()
-                else:
-                    self.draw = cv2.drawContours(self.img_rgb, self.ctn, -1, (255, 0, 0), 3)
-                    self.img_fit = cv2.fillPoly(self.dif, pts=[self.ctn], color=(0, 0, 0))
-
-        # print('validator :', self.cnt_validator)
-        img = PIL.Image.fromarray(self.draw)
-        self.image_tk = ImageTk.PhotoImage(img)
-
-        self.img_canvas_id = self.canvas.create_image(
-            self.screen_width // 2, self.screen_height // 2, image=self.image_tk, anchor=tk.CENTER
-        )
-        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
+    def prepare_img(self, img):
+        self.image = np.array(self.image_original)
+        self.image = cv2.resize(self.image, (self.screen_width, self.screen_height))
+        self.image[np.array(img) == 255] = 255
+        self.image_final = ImageTk.PhotoImage(PIL.Image.fromarray(self.image))
+        self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
 
     def save_in_reference_tif(self):
 
@@ -1461,6 +1357,7 @@ class Interface(tk.Frame):
             f = open("log_progress.txt", "x", encoding="utf-8")
             bool_check_dir = False
             f.close()
+
         return bool_check_dir
 
     def destroy_aplication(self):
@@ -1480,8 +1377,5 @@ if __name__ == "__main__":
     root.title("WeeDraw")
     root.resizable(False, False)
     obj.first_menu(root)
-    # obj.labelling_start(root)
     root.geometry("800x800+50+10")
-    # Exit1 = tk.Button(root, text="Sair", command=obj.destroy_aplication)
-    # Exit1.place(relx=0.019, rely=0.871, height=48, width=100)
     root.mainloop()
