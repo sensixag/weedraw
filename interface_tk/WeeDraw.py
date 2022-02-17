@@ -168,7 +168,7 @@ class Interface(tk.Frame):
         self.slider_saturation = tk.Scale(
             self.frame_of_options,
             from_=0.0,
-            to=200.0,
+            to=40.0,
             command=self.slider_changed_saturation,
             variable=self.current_value_saturation,
         )
@@ -421,9 +421,9 @@ class Interface(tk.Frame):
                 print(increment)
                 print(s.max())
 
-            else:
-                print("s")
-                s -= int(increment)
+        elif self.slider_saturation < self.slider_saturation_old:
+            print("s")
+            s -= int(increment)
 
         image_saturated = cv2.merge((h, s, v))
         image_saturated = cv2.cvtColor(image_saturated, cv2.COLOR_HSV2RGB)
@@ -433,16 +433,15 @@ class Interface(tk.Frame):
     # Metodos para receber os valores do slider de saturação
     def get_current_value_saturation(self):
         self.slider_saturation = int(self.current_value_saturation.get())
-        if (self.slider_saturation % 10) == 0:
-            print("valor slider :", self.slider_saturation)
-            if self.bool_draw:
-                print("Na condicao")
-                self.image_down = self.saturation(image=self.image_down, increment=10)
+        print("valor slider :", self.slider_saturation)
+        if self.bool_draw:
+            print("Na condicao")
+            self.image_down = self.saturation(image=self.image_down, increment=10)
 
-                if (self.slider_saturation <= 10):
-                    self.image_down = self.imgparcela.copy()
+            if self.slider_saturation <= 10:
+                self.image_down = self.imgparcela.copy()
 
-                self.update_img(self.draw_img)
+            self.update_img(self.draw_img)
         self.slider_saturation_old = self.slider_saturation
 
     def slider_changed_saturation(self, event):
@@ -541,12 +540,10 @@ class Interface(tk.Frame):
             self.opacity = not self.opacity
             if self.opacity:
                 option_img = "normal"
-                # print('No if')
-                self.canvas.tag_lower(self.img_canvas_id)
-                self.canvas.update()
+                self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
+
             else:
-                self.canvas.tag_raise(self.img_canvas_id)
-                self.canvas.update()
+                self.canvas.itemconfig(self.img_canvas_id, image=self.image_tk)
 
         elif (
             self.name_tif != "" and self.name_reference_binary != "" and self.name_reference_neural != "" and key == "5"
