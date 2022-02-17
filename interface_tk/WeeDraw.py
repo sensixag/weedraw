@@ -83,7 +83,7 @@ class Interface(tk.Frame):
         self.ready_start = False
 
         self.change_button = {}
-        self.bool_value = tk.StringVar()  # Necessario ser como string para funcionar
+        self.bool_value = tk.StringVar()
         self.spn_box_1 = tk.StringVar()
         self.spn_box_2 = tk.StringVar()
         self.spn_box_3 = tk.StringVar()
@@ -99,126 +99,6 @@ class Interface(tk.Frame):
         root.call("wm", "iconphoto", root._w, img)
 
         self.event2canvas = lambda e, c: (c.canvasx(e.x), c.canvasy(e.y))
-        menubar.add_cascade(label="File", menu=fileMenu)
-        fileMenu.add_cascade(label="Draw", command=self.select_image)
-        fileMenu.add_cascade(label="Choose Neural Network", command=self.select_image)
-
-    def start(self):
-
-        _bgcolor = "#d9d9d9"  # X11 color: 'gray85'
-        _fgcolor = "#000000"  # X11 color: 'black'
-        _compcolor = "#d9d9d9"  # X11 color: 'gray85'
-        _ana1color = "#d9d9d9"  # X11 color: 'gray85'
-        _ana2color = "#ececec"  # Closest X11 color: 'gray92'
-        self.style = ttk.Style()
-        if sys.platform == "win32":
-            self.style.theme_use("winnative")
-        self.style.configure(".", background=_bgcolor)
-        self.style.configure(".", foreground=_fgcolor)
-        self.style.configure(".", font="TkDefaultFont")
-        self.style.map(".", background=[("selected", _compcolor), ("active", _ana2color)])
-
-        root.configure(highlightcolor="black")
-
-        self.TSeparator1 = ttk.Separator(root)
-        self.TSeparator1.place(relx=0.021, rely=0.535, relwidth=0.962)
-
-        self.menubar = tk.Menu(root, font="TkMenuFont", bg=_bgcolor, fg=_fgcolor)
-        root.configure(menu=self.menubar)
-
-        self.btn_load_mosaico = tk.Button(root)
-        self.btn_load_mosaico.place(relx=0.74, rely=0.572, height=28, width=123)
-        self.btn_load_mosaico.configure(takefocus="", text="Mosaico")
-        self.btn_load_mosaico.bind("<Button-1>", partial(self.get_btn, key="0"))
-
-        self.btn_shape_reference = tk.Button(root)
-        self.btn_shape_reference.place(relx=0.74, rely=0.659, height=28, width=123)
-        self.btn_shape_reference.configure(takefocus="", text="Shape de Refer")
-        self.btn_shape_reference.bind("<Button-1>", partial(self.get_btn, key="1"))
-
-        self.btn_shape_neural = tk.Button(root)
-        self.btn_shape_neural.place(relx=0.74, rely=0.747, height=28, width=123)
-        self.btn_shape_neural.configure(takefocus="", text="Shape da Rede")
-        self.btn_shape_neural.bind("<Button-1>", partial(self.get_btn, key="2"))
-
-        self.btn_start = tk.Button(root)
-        self.btn_start.place(relx=0.742, rely=0.871, height=48, width=123)
-        self.btn_start.configure(takefocus="", text="Iniciar")
-        self.btn_start.bind("<Button-1>", partial(self.get_btn, key="5"))
-
-        self.spinbox1 = tk.Spinbox(root, from_=10.0, to=800.0, increment=10, textvariable=self.spn_box_1)
-        self.spinbox1.place(relx=0.74, rely=0.178, relheight=0.046, relwidth=0.243)
-        self.spinbox1.configure(
-            activebackground="#f9f9f9",
-            background="white",
-            font="TkDefaultFont",
-            highlightbackground="black",
-            selectbackground="blue",
-            selectforeground="white",
-            command=self.get_values_spinbox,
-        )
-
-        self.spinbox2 = tk.Spinbox(root, from_=100.0, to=800.0, increment=100, textvariable=self.spn_box_2)
-        self.spinbox2.place(relx=0.74, rely=0.271, relheight=0.046, relwidth=0.243)
-        self.spinbox2.configure(
-            activebackground="#f9f9f9",
-            background="white",
-            font="TkDefaultFont",
-            highlightbackground="black",
-            selectbackground="blue",
-            selectforeground="white",
-            command=self.get_values_spinbox,
-        )
-
-        self.spinbox3 = tk.Spinbox(root, from_=100.0, to=800.0, increment=100, textvariable=self.spn_box_3)
-        self.spinbox3.place(relx=0.74, rely=0.364, relheight=0.046, relwidth=0.243)
-        self.spinbox3.configure(
-            activebackground="#f9f9f9",
-            background="white",
-            font="TkDefaultFont",
-            highlightbackground="black",
-            selectbackground="blue",
-            selectforeground="white",
-            command=self.get_values_spinbox,
-        )
-
-        self.label1 = tk.Label(root)
-        self.label1.place(relx=0.015, rely=0.178, height=21, width=245)
-        self.label1.configure(activebackground="#f9f9f9", text="Escolha a porcentagem de iteração :")
-
-        self.Radiobutton1 = tk.Radiobutton(root)
-        self.Radiobutton1.place(relx=0.721, rely=0.455, relheight=0.046, relwidth=0.132)
-        self.Radiobutton1.configure(
-            justify="left",
-            text="Padrão",
-            value=True,
-            variable=self.bool_value,
-            command=self.get_values_radio,
-        )
-
-        self.label2 = tk.Label(root)
-        self.label2.place(relx=0.021, rely=0.269, height=21, width=235)
-        self.label2.configure(text="Valor do comprimento da imagem :")
-
-        self.label3 = tk.Label(root)
-        self.label3.place(relx=0.021, rely=0.36, height=21, width=186)
-        self.label3.configure(text="Valor de altura da imagem :")
-
-        self.label4 = tk.Label(root)
-        self.label4.place(relx=0.014, rely=0.446, height=21, width=186)
-        self.label4.configure(text="Usar configuração padrão :")
-
-        self.label5 = tk.Label(root)
-        self.label5.place(relx=0.023, rely=0.58, height=21, width=138)
-        self.label5.configure(text="Selecionar Mosaico :")
-
-        self.label6 = tk.Label(root)
-        self.label6.place(relx=0.019, rely=0.66, height=21, width=213)
-        self.label6.configure(text="Selecionar shape de referencia :")
-
-        self.label7 = tk.Label(root)
-        self.label7.place(relx=0.019, rely=0.74, height=38, width=221)
-        self.label7.configure(text="Selecionar shape da rede neural :")
 
     def labelling_start(self):
         root.geometry("1290x700+60+20")
@@ -322,7 +202,6 @@ class Interface(tk.Frame):
             height=self.screen_height,
         )
 
-        # self.canvas = tk.Canvas(frame, bd=0, xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
         self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
         self.frame_over_center.pack(expand=1)
 
@@ -432,36 +311,6 @@ class Interface(tk.Frame):
         self.btn_start.configure(text="Iniciar")
         self.btn_start.bind("<Button-1>", partial(self.get_btn, key="5"))
 
-        """
-        self.label4 = tk.Label(root)
-        self.label4.place(relx=0.117, rely=0.69, height=21, width=235)
-        self.label4.configure(text='Valor do comprimento da imagem :')
-
-        self.spinbox2 = tk.Spinbox(root, from_=256.0, to=768.0, increment=256, textvariable=self.spn_box_2)
-        self.spinbox2.place(relx=0.63, rely=0.69, relheight=0.046, relwidth=0.243)
-        self.spinbox2.configure(activebackground="#f9f9f9")
-        self.spinbox2.configure(background="white")
-        self.spinbox2.configure(font="TkDefaultFont")
-        self.spinbox2.configure(highlightbackground="black")
-        self.spinbox2.configure(selectbackground="blue")
-        self.spinbox2.configure(selectforeground="white")
-        self.spinbox2.configure(command=partial(self.get_values_spinbox, type='Efetuar Marcacoes'))
-
-        self.label5 = tk.Label(root)
-        self.label5.place(relx=0.117, rely=0.76, height=21, width=186)
-        self.label5.configure(text='Valor de altura da imagem :')
-
-        self.spinbox3 = tk.Spinbox(root, from_=256.0, to=400.0, increment=256, textvariable=self.spn_box_3)
-        self.spinbox3.place(relx=0.63, rely=0.76, relheight=0.046, relwidth=0.243)
-        self.spinbox3.configure(activebackground="#f9f9f9")
-        self.spinbox3.configure(background="white")
-        self.spinbox3.configure(font="TkDefaultFont")
-        self.spinbox3.configure(highlightbackground="black")
-        self.spinbox3.configure(selectbackground="blue")
-        self.spinbox3.configure(selectforeground="white")
-        self.spinbox3.configure(command=partial(self.get_values_spinbox, type='Efetuar Marcacoes'))
-        """
-
     def first_menu(self, app):
 
         self.logo = PhotoImage(file=r"icons/Logo-Escuro.png")
@@ -482,7 +331,6 @@ class Interface(tk.Frame):
         self.variable.set("Ainda Nao Selecionado")
 
         self.opt = tk.OptionMenu(app, self.variable, *self.OptionList)
-        # opt.config(width=90, font=('Helvetica', 12))
         self.opt.place(x=self.width_size * 0.50, y=self.hight_size * 0.57)
 
         self.label_opt = tk.Label(text="", font=("Helvetica", 12), fg="red")
@@ -491,37 +339,7 @@ class Interface(tk.Frame):
         self.variable.trace("w", self.callback_opt)
 
     def remove_buttons(self, option="First Menu"):
-
-        if option == "Test Neural Network":
-            self.btn_selet_image.destroy()
-            self.btn_segmentation.destroy()
-            self.btn_mask_true.destroy()
-            self.btn_diff_imgs.destroy()
-
-            self.painel_up_left.destroy()
-            self.painel_up_right.destroy()
-            self.painel_down_left.destroy()
-            self.painel_down_right.destroy()
-
-        elif option == "Comparar Resultados":
-            self.TSeparator1.destroy()
-            self.btn_load_mosaico.destroy()
-            self.btn_shape_reference.destroy()
-            self.btn_shape_neural.destroy()
-            self.btn_start.destroy()
-            self.spinbox1.destroy()
-            self.spinbox2.destroy()
-            self.spinbox3.destroy()
-            self.label1.destroy()
-            self.Radiobutton1.destroy()
-            self.label2.destroy()
-            self.label3.destroy()
-            self.label4.destroy()
-            self.label5.destroy()
-            self.label6.destroy()
-            self.label7.destroy()
-
-        elif option == "Draw Menu":
+        if option == "Draw Menu":
             self.label2.destroy()
             self.btn_shape_reference.destroy()
             self.label3.destroy()
@@ -552,10 +370,8 @@ class Interface(tk.Frame):
             self.label7.destroy()
 
         else:
-
             self.canvas1.destroy()
             self.label1.destroy()
-
             self.opt.destroy()
             self.label_opt.destroy()
 
@@ -569,8 +385,6 @@ class Interface(tk.Frame):
         self.slider_pencil = self.current_value_draw.get()
         if self.slider_pencil < 10:
             self.slider_pencil = 10
-
-        # return "{: .2f}".format(self.current_value_draw.get())
 
     def get_current_value_opacity(self):
 
@@ -594,53 +408,9 @@ class Interface(tk.Frame):
     def slider_changed_draw(self, event):
         self.value_label.configure(text=self.get_current_value_draw())
 
-    def change_dir(self, event=None, key=None):
-        self.cnt_validator = []
-
-        if key == "1":
-            self.count_img += 1
-
-        else:
-            self.count_img += -1
-
-        # print(self.name_dir[self.count_img])
-
-        self.img_rgb = cv2.imread(self.diretorio_rgb + self.name_dir[self.count_img], 1)
-        self.img_neural = cv2.imread(self.diretorio_pred + self.name_dir[self.count_img], 1)
-        self.img_neural = cv2.cvtColor(self.img_neural, cv2.COLOR_BGR2GRAY)
-        self.img_neural = nf.adjust_pixels(self, self.img_neural, 50)
-        # self.img_neural = nf.ellipse_overlap(self, self.img_neural, )
-
-        self.img_binary = cv2.imread(self.diretorio_true + self.name_dir[self.count_img], 1)
-        self.img_binary = cv2.cvtColor(self.img_binary, cv2.COLOR_BGR2GRAY)
-
-        self.union, self.dif = nf.diff_contourns(
-            self,
-            self.img_binary,
-            self.img_neural,
-        )
-        self.contours = nf.find_contourns(self, self.dif)
-        self.draw = cv2.drawContours(self.img_rgb, self.contours, -1, (255, 0, 0), 3)
-
-        img = PIL.Image.fromarray(self.draw)
-        img = cv2.resize(self.img_rgb, (self.screen_width, self.screen_height))
-        img = PIL.Image.fromarray(img)
-        self.image_tk = ImageTk.PhotoImage(img)
-
-        self.img_canvas_id = self.canvas.create_image(
-            self.screen_width // 2, self.screen_height // 2, image=self.image_tk, anchor=tk.CENTER
-        )
-        print("self.img_canvas_id dir: ", self.img_canvas_id)
-        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
-        self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-
-        self.first_click = True
-        self.canvas.bind("<ButtonPress-1>", self.printcoords)
-
     def get_values_spinbox(self, type=""):
 
         if type == "Comparar Resultados":
-
             if self.first_click_bool == False:
                 self.iterator_recoil = float(int(self.spinbox1.get()) / 100)
                 self.iterator_x = int(self.spinbox2.get())
@@ -666,7 +436,6 @@ class Interface(tk.Frame):
             self.spn_box_1.set("80")
             self.spn_box_2.set("256")
             self.spn_box_3.set("256")
-            # self.bool_value.set(bool_default)
 
         else:
             bool_default = False
@@ -686,7 +455,7 @@ class Interface(tk.Frame):
         elif key == "3":
             self.name_reference_binary = self.load_shp(1)[1]
 
-        elif key == "6":
+        if key == "6":
             self.pencil_draw = True
             self.polygon_draw = False
             self.opacity = False
@@ -821,133 +590,8 @@ class Interface(tk.Frame):
     def run(self):
         self.labelling_start()
 
-    def create_buttons(self):
-        # Botao para Selecionar uma Imagem
-        root.maxsize(700, 700)
-
-        self.btn_selet_image = tk.Button(root, text="Select an image", command=self.select_image)
-        self.btn_selet_image.place(x=50, y=10)
-
-        # Botao para Segmentacao
-        self.btn_segmentation = tk.Button(root, text="Apply Segmentation", command=self.predict_image)
-        self.btn_segmentation.place(x=400, y=10)
-
-        # Botao para escolher a marcara de referencia
-        self.btn_mask_true = tk.Button(root, text="Select Mask", command=self.select_true_binary)
-        self.btn_mask_true.place(x=50, y=326)
-
-        # Botao para analisar as diferencas entre a predicao e a mascara
-        self.btn_diff_imgs = tk.Button(root, text="Differences", command=self.diff_imgs)
-        self.btn_diff_imgs.place(x=400, y=326)
-
-        # Paineis para Exibicao
-        # Painel Superior Esquerdo
-        self.painel_up_left = tk.Label(root)
-        self.painel_up_left.place(x=20, y=50)
-
-        # Painel Superior Direito
-        self.painel_up_right = tk.Label(root)
-        self.painel_up_right.place(x=320, y=50)
-
-        # Painel Inferior Esquerdo
-        self.painel_down_left = tk.Label(root)
-        self.painel_down_left.place(x=20, y=366)
-
-        # Painel Inferior Direito
-        self.painel_down_right = tk.Label(root)
-        self.painel_down_right.place(x=320, y=366)
-
-    def select_image(self):
-
-        self.path_rgb = filedialog.askopenfilename()
-        if self.path_rgb:
-
-            self.img_rgb = cv2.imread(self.path_rgb, -1)
-            self.img_rgb = cv2.resize(self.img_rgb, (256, 256))
-
-            image = Image.fromarray(self.img_rgb)
-            image_tk = ImageTk.PhotoImage(image)
-
-            self.painel_up_left.configure(image=image_tk)
-            self.painel_up_left.image = image_tk
-
     def callback_opt(self, *args):
-
-        if self.old_choose == "Test Neural Network" and self.variable.get() != "Test Neural Network":
-            self.remove_buttons()
-
-        if self.variable.get() == "Test Neural Network":
-            self.label_opt.destroy()
-            self.opt.destroy()
-            self.create_buttons()
-
-        elif self.variable.get() == "Generate Shape from RGB Tif":
-
-            root.maxsize(self.width_size, self.hight_size)
-            if self.load_rgb_tif()[0]:
-                self.generate_binary_tif()
-                self.generate_shape()
-
-            else:
-                mbox.showerror("Error", "Nenhum Ortomosaico.tif foi Selecionado :")
-                tif_loaded = False
-
-        elif self.variable.get() == "Generate Shape from Binary Tif":
-            root.maxsize(self.width_size, self.hight_size)
-            if self.load_rgb_tif()[0]:
-                self.generate_shape()
-            else:
-                mbox.showerror("Error", "Nenhum Ortomosaico.tif foi Selecionado :")
-                tif_loaded = False
-
-        elif self.variable.get() == "Comparar Resultados":
-            self.remove_buttons()
-            self.start()
-
-        elif self.variable.get() == "Comparar por Diretorios":
-            self.remove_buttons()
-
-            """
-            self.diretorio_rgb = filedialog.askdirectory(title='Selecione o diretorio de imagens RGB :') + '/'
-            self.diretorio_true = filedialog.askdirectory(title='Selecione o diretorio de imagens de marcacoes manuais :') + '/'
-            self.diretorio_pred = filedialog.askdirectory(title='Selecione o diretorio de imagens de predicao :') + '/'
-            """
-            self.diretorio_rgb = "../../daninhas/ortomosaicos/pre-emergente/190837/rgb/"
-            self.diretorio_true = "../../daninhas/ortomosaicos/pre-emergente/190837/marcacoes_manuais/"
-            self.diretorio_pred = "../../daninhas/ortomosaicos/pre-emergente/190837/resultados_rede_manuais/"
-
-            # (self.diretorio_rgb, self.diretorio_true, self.diretorio_pred)
-            self.name_dir = os.listdir(self.diretorio_rgb)
-            frame = tk.Frame(root, bd=2, relief=tk.SUNKEN)
-            frame.grid_rowconfigure(0, weight=1)
-            frame.grid_columnconfigure(0, weight=1)
-            xscroll = tk.Scrollbar(frame, orient=tk.HORIZONTAL)
-            yscroll = tk.Scrollbar(frame)
-            self.canvas = tk.Canvas(
-                frame,
-                bd=0,
-                width=self.screen_width,
-                height=self.screen_height,
-                xscrollcommand=xscroll.set,
-                yscrollcommand=yscroll.set,
-            )
-
-            self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-
-            frame.pack(expand=1)
-            self.next_icon = PhotoImage(file=r"icons/next.png")
-            self.next_btn = tk.Button(root, image=self.next_icon)
-            self.next_btn.place(relx=0.926, rely=0.363, height=83, width=43)
-            self.next_btn.configure(borderwidth="2")
-            self.next_btn.bind("<Button-1>", partial(self.change_dir, key="1"))
-
-            self.back_icon = PhotoImage(file=r"icons/back.png")
-            self.back_btn = tk.Button(root, image=self.back_icon)
-            self.back_btn.place(relx=0.031, rely=0.363, height=83, width=43)
-            self.back_btn.configure(borderwidth="2")
-            self.back_btn.bind("<Button-1>", partial(self.change_dir, key="0"))
-
-        elif self.variable.get() == "Efetuar Marcacoes":
+        if self.variable.get() == "Efetuar Marcacoes":
 
             if not os.path.isdir(self.path_save_img_rgb):
                 os.makedirs(self.path_save_img_rgb, exist_ok=True)
@@ -969,27 +613,9 @@ class Interface(tk.Frame):
 
     def button_click(self, event=None, key=None):
         if self.bool_draw:
+            print("Eliminando")
             self.count_feature = 0
             data_polygons = []
-
-            for i in range(0, len(self.features_polygons) - 1, 1):
-                try:
-                    if self.features_polygons[i] == []:
-                        continue
-                    data_polygons.append((self.features_polygons[i][2]))
-
-                    if self.features_polygons[i + 1][0] != self.features_polygons[i][0]:
-                        self.draw_line.polygon((data_polygons), fill="white", outline="white")
-                        data_polygons.clear()
-
-                    if (i + 3) == len(self.features_polygons):
-                        data_polygons.append(self.features_polygons[i + 1][2])
-                        data_polygons.append(self.features_polygons[i + 2][2])
-                        self.draw_line.polygon((data_polygons), fill="white", outline="white")
-                        # print(data_polygons)
-                        data_polygons.clear()
-                except:
-                    pass
 
             self.save_draw_array = np.asarray(self.draw_img)
             self.save_draw_array = nf.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
@@ -999,9 +625,7 @@ class Interface(tk.Frame):
                     self.path_save_img_negative + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
                     self.imgparcela,
                 )
-
             else:
-                self.canvas.delete(self.img_canvas_id)
                 cv2.imwrite(
                     self.path_save_img_rgb + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
                     self.imgparcela,
@@ -1015,9 +639,6 @@ class Interface(tk.Frame):
 
                 self.draw_img = PIL.Image.new("RGB", (self.screen_width, self.screen_height), (0, 0, 0))
                 self.draw_line = ImageDraw.Draw(self.draw_img)
-
-            del self.draw_lines_array
-            del self.features_polygons
 
             self.draw_lines_array = []
             self.features_polygons = [[]]
@@ -1132,8 +753,6 @@ class Interface(tk.Frame):
         self.canvas.bind("<Button 3>", self.right_click)
         self.canvas.bind("<B1-Motion>", self.draw_smth)
 
-        del self.image
-
     def right_click(self, event):
         self.current_points.clear()
         self.count_feature += 1
@@ -1163,6 +782,7 @@ class Interface(tk.Frame):
             self.draw_line.ellipse(
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (255, 0, 0)
             )
+            self.bool_draw = True
             self.prepare_img(self.draw_img)
 
         elif not self.pencil_draw and not self.polygon_draw:
@@ -1182,19 +802,6 @@ class Interface(tk.Frame):
         self.image[np.array(img) == 255] = 255
         self.image_final = ImageTk.PhotoImage(PIL.Image.fromarray(self.image))
         self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
-
-    def save_in_reference_tif(self):
-
-        if self.reference_neural.endswith("tif"):
-            self.red = self.mosaico.GetRasterBand(1)
-
-            self.dst_img = gdal.GetDriverByName("GTiff").Create(
-                str(self.reference_neural), self.nx, self.ny, 1, gdal.GDT_Byte
-            )
-            self.dst_img.SetGeoTransform(self.mosaico.GetGeoTransform())
-            self.srs = osr.SpatialReference()
-            self.srs.ImportFromWkt(self.mosaico.GetProjection())
-            self.dst_img.SetProjection(self.srs.ExportToWkt())
 
     def load_rgb_tif(self):
 
