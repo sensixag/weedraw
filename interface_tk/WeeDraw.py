@@ -1,3 +1,4 @@
+from turtle import update
 import numpy as np
 import os
 import pathlib
@@ -65,6 +66,7 @@ class Interface(tk.Frame):
         self.name_reference_binary = ""
         self.name_reference_neural = ""
         self.slider_pencil = 10
+        self.slider_saturation = 0
         self.color_frame_over_center = "black"
         self.pencil_draw = True
         self.polygon_draw = False
@@ -87,7 +89,9 @@ class Interface(tk.Frame):
         self.spn_box_1 = tk.StringVar()
         self.spn_box_2 = tk.StringVar()
         self.spn_box_3 = tk.StringVar()
-        self.current_value_draw = tk.DoubleVar()
+
+        self.current_value_saturation = tk.DoubleVar()
+        self.current_value_contourn = tk.DoubleVar()
         self.current_value_opacity = tk.DoubleVar()
         self.btn_int = tk.IntVar()
 
@@ -113,6 +117,7 @@ class Interface(tk.Frame):
         self.background_slider = "#414851"
         self.intern_slider = "#5a636f"
         self.slider_opacity = 20
+        self.slider_saturation_old = 0
 
         self.frame_ground = tk.Frame(root)
         self.frame_ground.place(relx=0.0, rely=0.0, relheight=1350, relwidth=740)
@@ -120,10 +125,11 @@ class Interface(tk.Frame):
 
         self.color_frame_over_center = "black"
         self.background_slider = "#414851"
-
         self.intern_slider = "#5a636f"
-        self.value_label = tk.Label(root, text=self.get_current_value_draw())
-        self.label_opacity = tk.Label(root, text=self.get_current_value_opacity())
+
+        self.set_slider_saturation = tk.Label(root, text=self.get_current_value_saturation())
+        self.set_slider_contourn = tk.Label(root, text=self.get_current_value_contourn())
+        self.set_slider_opacity = tk.Label(root, text=self.get_current_value_opacity())
 
         # Tela inferior com botoes
         self.frame_below_center = tk.Frame(root)
@@ -141,19 +147,42 @@ class Interface(tk.Frame):
         self.frame_of_options.place(relx=0.008, rely=0.014, relheight=0.964, relwidth=0.159)
         self.frame_of_options.configure(borderwidth="0", background=self.color_frame_options)
 
-        self.label_opacity = tk.Label(self.frame_of_options, text=self.get_current_value_opacity())
-        self.label_opacity.place(relx=0.059, rely=0.138, height=31, width=79)
-        self.label_opacity.configure(text="Opacidade:", fg=self.color_buttons_center, bg=self.color_frame_options)
+        self.set_slider_opacity = tk.Label(self.frame_of_options, text=self.get_current_value_opacity())
+        self.set_slider_opacity.place(relx=0.059, rely=0.138, height=31, width=79)
+        self.set_slider_opacity.configure(text="Opacidade:", fg=self.color_buttons_center, bg=self.color_frame_options)
 
-        self.label_thickness = tk.Label(self.frame_of_options)
-        self.label_thickness.place(relx=0.059, rely=0.03, height=21, width=79)
-        self.label_thickness.configure(
-            text="Espessura:", background=self.color_frame_options, fg=self.color_buttons_center
+        self.label_saturation = tk.Label(self.frame_of_options)
+        self.label_saturation.place(relx=0.059, rely=0.03, height=21, width=79)
+        self.label_saturation.configure(
+            text="Saturação:", background=self.color_frame_options, fg=self.color_buttons_center
         )
+
+        self.label_contourn = tk.Label(self.frame_of_options)
+        self.label_contourn.place(relx=0.059, rely=0.247, height=21, width=79)
+        self.label_contourn.configure(text="Contorno:", fg=self.color_buttons_center, bg=self.color_frame_options)
 
         self.canvas_logo = tk.Canvas(self.frame_of_options)
         self.canvas_logo.place(relx=0.04, rely=0.910, relheight=0.08, relwidth=0.94)
         self.canvas_logo.create_image(92, 30, image=self.logo, anchor="center")
+
+        self.slider_saturation = tk.Scale(
+            self.frame_of_options,
+            from_=0.0,
+            to=200.0,
+            command=self.slider_changed_saturation,
+            variable=self.current_value_saturation,
+        )
+
+        self.slider_saturation.place(relx=0.098, rely=0.0705, relheight=0.062, relwidth=0.8)
+        self.slider_saturation.configure(
+            length="164",
+            orient="horizontal",
+            borderwidth="0",
+            troughcolor=self.intern_slider,
+            fg="white",
+            bg=self.background_slider,
+            highlightbackground=self.background_slider,
+        )
 
         self.slider_opacity = tk.Scale(
             self.frame_of_options,
@@ -178,8 +207,8 @@ class Interface(tk.Frame):
             self.frame_of_options,
             from_=0.0,
             to=100.0,
-            command=self.slider_changed_draw,
-            variable=self.current_value_draw,
+            command=self.slider_changed_contourn,
+            variable=self.current_value_contourn,
         )
         self.slider_contourn.place(relx=0.098, rely=0.279, relheight=0.062, relwidth=0.8)
         self.slider_contourn.configure(
@@ -248,15 +277,16 @@ class Interface(tk.Frame):
         self.percent_txt.place(relx=0.46, rely=0.06, height=21, width=80)
         self.percent_txt.configure(activebackground="#f9f9f9")
 
-        self.current_value_opacity.set(5.0)
         self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
         self.canvas.pack()
-        print("self.img_canvas_id : ", self.img_canvas_id)
+
+        self.current_value_opacity.set(5.0)
+        self.current_value_contourn.set(0)
 
     def load_image_in_screen(self, img):
         img = cv2.resize(img, (self.screen_width, self.screen_height))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        self.image_original = img.copy()
+        self.image_down = img.copy()
         img = PIL.Image.fromarray(img)
 
         self.image_front = ImageTk.PhotoImage(img)
@@ -381,11 +411,53 @@ class Interface(tk.Frame):
         label_init = tk.Label(root, text=text_val)
         self.canvas_init.create_window(200, 230, window=label_init)
 
-    def get_current_value_draw(self):
-        self.slider_pencil = self.current_value_draw.get()
+    def saturation(self, image, increment):
+        image_hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        h, s, v = cv2.split(image_hsv)
+        print("smax", s.max())
+        if s.max() < 255:
+            if self.slider_saturation > self.slider_saturation_old:
+                s += int(increment)
+                print(increment)
+                print(s.max())
+
+            else:
+                print("s")
+                s -= int(increment)
+
+        image_saturated = cv2.merge((h, s, v))
+        image_saturated = cv2.cvtColor(image_saturated, cv2.COLOR_HSV2RGB)
+
+        return image_saturated
+
+    # Metodos para receber os valores do slider de saturação
+    def get_current_value_saturation(self):
+        self.slider_saturation = int(self.current_value_saturation.get())
+        if (self.slider_saturation % 10) == 0:
+            print("valor slider :", self.slider_saturation)
+            if self.bool_draw:
+                print("Na condicao")
+                self.image_down = self.saturation(image=self.image_down, increment=10)
+
+                if (self.slider_saturation <= 10):
+                    self.image_down = self.imgparcela.copy()
+
+                self.update_img(self.draw_img)
+        self.slider_saturation_old = self.slider_saturation
+
+    def slider_changed_saturation(self, event):
+        self.set_slider_saturation.configure(text=self.get_current_value_saturation())
+
+    # Metodos para receber os valores do slider de contorno
+    def get_current_value_contourn(self):
+        self.slider_pencil = self.current_value_contourn.get()
         if self.slider_pencil < 10:
             self.slider_pencil = 10
 
+    def slider_changed_contourn(self, event):
+        self.set_slider_contourn.configure(text=self.get_current_value_contourn())
+
+    # Metodos para receber os valores do slider de opacidade
     def get_current_value_opacity(self):
 
         if self.current_value_opacity.get() <= 20:
@@ -400,13 +472,8 @@ class Interface(tk.Frame):
         elif self.current_value_opacity.get() <= 80 and self.current_value_opacity.get() > 60:
             self.slider_opacity = "gray75"
 
-        # return "{: .2f}".format(self.current_value_opacity.get())
-
     def slider_changed_opacity(self, event):
-        self.label_opacity.configure(text=self.get_current_value_opacity())
-
-    def slider_changed_draw(self, event):
-        self.value_label.configure(text=self.get_current_value_draw())
+        self.set_slider_opacity.configure(text=self.get_current_value_opacity())
 
     def get_values_spinbox(self, type=""):
 
@@ -612,8 +679,11 @@ class Interface(tk.Frame):
         return current_position
 
     def button_click(self, event=None, key=None):
+        print("self.img_canvas_id : ", self.img_canvas_id)
         if self.bool_draw:
             print("Eliminando")
+            self.current_value_saturation.set(0.0)
+
             self.count_feature = 0
             data_polygons = []
 
@@ -739,14 +809,14 @@ class Interface(tk.Frame):
         redparcela = self.red.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
         self.imgparcela = cv2.merge((blueparcela, greenparcela, redparcela))
         self.imgparcela[self.daninha_parcela == 0] = 0
-        self.image_original = self.imgparcela.copy()
+        self.image_down = self.imgparcela.copy()
 
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
         self.image_tk = ImageTk.PhotoImage(self.img_array_tk)
         self.first_click = True
         self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        self.prepare_img(self.img_array_tk)
+        self.update_img(self.img_array_tk)
         self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
         self.canvas.bind("<Button-1>", self.get_x_and_y)
@@ -764,12 +834,16 @@ class Interface(tk.Frame):
             number_points = len(self.current_points)
 
             if number_points > 2:
-                self.draw_line.polygon((self.current_points), fill="white", outline="white")
+                self.draw_line.polygon((self.current_points), fill="red", outline="red")
 
             elif number_points == 2:
                 self.draw_line.line((self.lasx, self.lasy, event.x, event.y), (255, 0, 0), width=5, joint="curve")
 
-            self.bool_draw = True
+            Offset = (10) / 2
+            self.draw_line.ellipse(
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (0, 255, 0)
+            )
+            self.update_img(self.draw_img)
 
     def draw_smth(self, event):
         if self.pencil_draw:
@@ -783,7 +857,7 @@ class Interface(tk.Frame):
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (255, 0, 0)
             )
             self.bool_draw = True
-            self.prepare_img(self.draw_img)
+            self.update_img(self.draw_img)
 
         elif not self.pencil_draw and not self.polygon_draw:
             self.lasx, self.lasy = event.x, event.y
@@ -794,10 +868,10 @@ class Interface(tk.Frame):
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (0, 0, 0)
             )
             self.bool_draw = True
-            self.prepare_img(self.draw_img)
+            self.update_img(self.draw_img)
 
-    def prepare_img(self, img):
-        self.image = np.array(self.image_original)
+    def update_img(self, img):
+        self.image = np.array(self.image_down)
         self.image = cv2.resize(self.image, (self.screen_width, self.screen_height))
         self.image[np.array(img) == 255] = 255
         self.image_final = ImageTk.PhotoImage(PIL.Image.fromarray(self.image))
