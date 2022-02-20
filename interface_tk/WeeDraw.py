@@ -261,6 +261,14 @@ class Interface(tk.Frame):
         )
         self.hide_layer_btn.bind("<Button-1>", partial(self.get_btn, key="8"))
 
+        self.super_pixel_icon = ImageTk.PhotoImage(file=r"icons/s_pixel.png")
+        self.super_pixel_btn = tk.Button(self.frame_below_center, image=self.super_pixel_icon)
+        self.super_pixel_btn.place(relx=0.006, rely=0.265, height=43, width=43)
+        self.super_pixel_btn.configure(
+            activebackground="#f9f9f9", borderwidth="2", text="Button", background=self.color_buttons_center
+        )
+        self.super_pixel_btn.bind("<Button-1>", partial(self.get_btn, key="10"))
+
         self.next_icon = PhotoImage(file=r"icons/next.png")
         self.next_btn = tk.Button(root, image=self.next_icon)
         self.next_btn.place(relx=0.957, rely=0.43, height=70, width=43)
@@ -458,18 +466,7 @@ class Interface(tk.Frame):
 
     # Metodos para receber os valores do slider de opacidade
     def get_current_value_opacity(self):
-
-        if self.current_value_opacity.get() <= 20:
-            self.slider_opacity = "gray12"
-
-        elif self.current_value_opacity.get() <= 40 and self.current_value_opacity.get() > 20:
-            self.slider_opacity = "gray25"
-
-        elif self.current_value_opacity.get() <= 60 and self.current_value_opacity.get() > 40:
-            self.slider_opacity = "gray50"
-
-        elif self.current_value_opacity.get() <= 80 and self.current_value_opacity.get() > 60:
-            self.slider_opacity = "gray75"
+        self.slider_opacity = self.current_value_opacity.get()
 
     def slider_changed_opacity(self, event):
         self.set_slider_opacity.configure(text=self.get_current_value_opacity())
@@ -531,11 +528,6 @@ class Interface(tk.Frame):
             self.polygon_draw = False
             self.opacity = False
 
-        elif key == "9":
-            self.pencil_draw = False
-            self.polygon_draw = True
-            self.opacity = False
-
         elif key == "8":
             self.opacity = not self.opacity
             if self.opacity:
@@ -544,6 +536,17 @@ class Interface(tk.Frame):
 
             else:
                 self.canvas.itemconfig(self.img_canvas_id, image=self.image_tk)
+
+        elif key == "9":
+            self.pencil_draw = False
+            self.polygon_draw = True
+            self.opacity = False
+
+        elif key == "10":
+            print("10")
+            self.pencil_draw = False
+            self.polygon_draw = False
+            self.opacity = False
 
         elif (
             self.name_tif != "" and self.name_reference_binary != "" and self.name_reference_neural != "" and key == "5"
@@ -1023,10 +1026,13 @@ class Interface(tk.Frame):
             f = open("log_progress.txt", encoding="utf-8")
             for lines in f:
                 pass
-            values = lines.split(",")
-            self.x_crop = float(values[0])
-            self.y_crop = float(values[1])
-            self.directory_saved = str(values[2])
+
+            # Caso o arquivo exista e tenha valores validos
+            if (os.path.getsize("log_progress.txt")) > 0:
+                values = lines.split(",")
+                self.x_crop = float(values[0])
+                self.y_crop = float(values[1])
+                self.directory_saved = str(values[2])
 
             bool_check_dir = True
             f.close()
