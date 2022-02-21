@@ -67,6 +67,8 @@ class Interface(tk.Frame):
         self.name_reference_neural = ""
         self.slider_pencil = 10
         self.slider_saturation = 0
+        self.slider_opacity = 50
+        self.slider_contourn = 50
         self.color_frame_over_center = "black"
         self.pencil_draw = True
         self.polygon_draw = False
@@ -116,7 +118,6 @@ class Interface(tk.Frame):
         self.color_buttons_center = "white"
         self.background_slider = "#414851"
         self.intern_slider = "#5a636f"
-        self.slider_opacity = 20
         self.slider_saturation_old = 0
 
         self.frame_ground = tk.Frame(root)
@@ -187,7 +188,7 @@ class Interface(tk.Frame):
         self.slider_opacity = tk.Scale(
             self.frame_of_options,
             from_=0.0,
-            to=100.0,
+            to=255.0,
             command=self.slider_changed_opacity,
             variable=self.current_value_opacity,
         )
@@ -281,15 +282,14 @@ class Interface(tk.Frame):
         self.back_btn.configure(borderwidth="2", background="white")
         self.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
-        self.percent_txt = tk.Label(root, text="", font=("Helvetica", 18), fg="black")
-        self.percent_txt.place(relx=0.46, rely=0.06, height=21, width=80)
-        self.percent_txt.configure(activebackground="#f9f9f9")
+        self.percent_txt = tk.Label(self.frame_of_options, text="", font=("Helvetica", 12), bg=None)
+        self.percent_txt.place(relx=0.100, rely=0.52, height=21, width=120)
 
         self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
         self.canvas.pack()
 
-        self.current_value_opacity.set(5.0)
-        self.current_value_contourn.set(0)
+        self.current_value_opacity.set(50.0)
+        self.current_value_contourn.set(1)
 
     def load_image_in_screen(self, img):
         img = cv2.resize(img, (self.screen_width, self.screen_height))
@@ -466,7 +466,7 @@ class Interface(tk.Frame):
 
     # Metodos para receber os valores do slider de opacidade
     def get_current_value_opacity(self):
-        self.slider_opacity = self.current_value_opacity.get()
+        self.slider_opacity = int(self.current_value_opacity.get())
 
     def slider_changed_opacity(self, event):
         self.set_slider_opacity.configure(text=self.get_current_value_opacity())
@@ -599,7 +599,7 @@ class Interface(tk.Frame):
             self.daninha_1 = gdal.Open(self.reference_binary)
             self.daninha_band_1 = self.daninha_1.GetRasterBand(1)
 
-            self.draw_img = PIL.Image.new("RGB", (self.screen_width, self.screen_height), (0, 0, 0))
+            self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
             self.draw_line = ImageDraw.Draw(self.draw_img)
             self.cnt_validator = []
 
@@ -707,7 +707,7 @@ class Interface(tk.Frame):
                 self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
                 self.dst_img.FlushCache()
 
-                self.draw_img = PIL.Image.new("RGB", (self.screen_width, self.screen_height), (0, 0, 0))
+                self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
                 self.draw_line = ImageDraw.Draw(self.draw_img)
 
             self.draw_lines_array = []
@@ -801,7 +801,8 @@ class Interface(tk.Frame):
             self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
         )
         self.percent_txt["text"] = (
-            str(self.percent_progress(self.x_crop, self.y_crop, self.mosaico.RasterXSize, self.mosaico.RasterYSize))
+            "Progress : "
+            + str(self.percent_progress(self.x_crop, self.y_crop, self.mosaico.RasterXSize, self.mosaico.RasterYSize))
             + "%"
         )
         blueparcela = self.blue.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
@@ -837,11 +838,17 @@ class Interface(tk.Frame):
                 self.draw_line.polygon((self.current_points), fill="red", outline="red")
 
             elif number_points == 2:
-                self.draw_line.line((self.lasx, self.lasy, event.x, event.y), (255, 0, 0), width=5, joint="curve")
+                self.draw_line.line(
+                    (self.lasx, self.lasy, event.x, event.y),
+                    (255, 0, 0, int(self.current_value_opacity.get())),
+                    width=5,
+                    joint="curve",
+                )
 
             Offset = (10) / 2
             self.draw_line.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (0, 255, 0)
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
+                (0, 255, 0, int(self.current_value_opacity.get())),
             )
             self.update_img(self.draw_img)
 
@@ -850,11 +857,15 @@ class Interface(tk.Frame):
             self.lasx, self.lasy = event.x, event.y
 
             self.draw_line.line(
-                (self.lasx, self.lasy, event.x, event.y), (255, 0, 0), width=int(self.slider_pencil), joint="curve"
+                (self.lasx, self.lasy, event.x, event.y),
+                (255, 0, 0, int(self.current_value_opacity.get())),
+                width=int(self.slider_pencil),
+                joint="curve",
             )
             Offset = (int(self.slider_pencil)) / 2
             self.draw_line.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (255, 0, 0)
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
+                (255, 0, 0, int(self.current_value_opacity.get())),
             )
             self.bool_draw = True
             self.update_img(self.draw_img)
@@ -862,10 +873,16 @@ class Interface(tk.Frame):
         elif not self.pencil_draw and not self.polygon_draw:
             self.lasx, self.lasy = event.x, event.y
 
-            self.draw_line.line((self.lasx, self.lasy, event.x, event.y), (0, 0, 0), width=20, joint="curve")
+            self.draw_line.line(
+                (self.lasx, self.lasy, event.x, event.y),
+                (0, 0, 0, 0),
+                width=20,
+                joint="curve",
+            )
             Offset = int(self.slider_pencil / 2)
             self.draw_line.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset), (0, 0, 0)
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
+                (0, 0, 0, 0),
             )
             self.bool_draw = True
             self.update_img(self.draw_img)
@@ -873,8 +890,10 @@ class Interface(tk.Frame):
     def update_img(self, img):
         self.image = np.array(self.image_down)
         self.image = cv2.resize(self.image, (self.screen_width, self.screen_height))
-        self.image[np.array(img) == 255] = 255
-        self.image_final = ImageTk.PhotoImage(PIL.Image.fromarray(self.image))
+        self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2RGBA)
+        self.image = PIL.Image.fromarray(self.image.copy())
+        self.image.paste(self.draw_img, (0, 0), self.draw_img)
+        self.image_final = ImageTk.PhotoImage(self.image)
         self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
 
     def load_rgb_tif(self):
