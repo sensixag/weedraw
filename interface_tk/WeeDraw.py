@@ -5,6 +5,7 @@ import pathlib
 import PIL
 import cv2
 import sys
+import imgaug as im
 
 try:
 
@@ -70,14 +71,21 @@ class Interface(tk.Frame):
         self.slider_opacity = 50
         self.slider_contourn = 50
         self.color_frame_over_center = "black"
-        self.pencil_draw = True
-        self.polygon_draw = False
+        self.pencil_draw_bool = True
+        self.polygon_draw_bool = False
+        self.super_pixel_bool = False
         self.opacity = False
         self.bool_draw = False
         self.path_save_img_rgb = "dataset/rgb"
         self.path_save_img_bin = "dataset/binario"
         self.path_save_img_negative = "dataset/negativos"
         self.directory_saved = ""
+
+        self.color_line = 0
+
+        # Valores do color_map: BLACK, RED, GREEN, BLUE
+        self.color_map = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)]
+
         root.maxsize(self.width_size, self.hight_size)
         root.resizable(False, False)
 
@@ -519,14 +527,16 @@ class Interface(tk.Frame):
             self.name_reference_binary = self.load_shp(1)[1]
 
         if key == "6":
-            self.pencil_draw = True
-            self.polygon_draw = False
+            self.pencil_draw_bool = True
+            self.polygon_draw_bool = False
             self.opacity = False
+            self.super_pixel_bool = False
 
         elif key == "7":
-            self.pencil_draw = False
-            self.polygon_draw = False
+            self.pencil_draw_bool = False
+            self.polygon_draw_bool = False
             self.opacity = False
+            self.super_pixel_bool = False
 
         elif key == "8":
             self.opacity = not self.opacity
@@ -538,15 +548,17 @@ class Interface(tk.Frame):
                 self.canvas.itemconfig(self.img_canvas_id, image=self.image_tk)
 
         elif key == "9":
-            self.pencil_draw = False
-            self.polygon_draw = True
+            self.pencil_draw_bool = False
+            self.polygon_draw_bool = True
             self.opacity = False
+            self.super_pixel_bool = False
 
         elif key == "10":
             print("10")
-            self.pencil_draw = False
-            self.polygon_draw = False
+            self.pencil_draw_bool = False
+            self.polygon_draw_bool = False
             self.opacity = False
+            self.super_pixel_bool = True
 
         elif (
             self.name_tif != "" and self.name_reference_binary != "" and self.name_reference_neural != "" and key == "5"
@@ -601,6 +613,10 @@ class Interface(tk.Frame):
 
             self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
             self.draw_line = ImageDraw.Draw(self.draw_img)
+
+            self.draw_img_gray = PIL.Image.new("L", (self.screen_width, self.screen_height))
+            self.draw_line_gray = ImageDraw.Draw(self.draw_img_gray)
+
             self.cnt_validator = []
 
             self.next_btn.bind("<Button-1>", partial(self.button_click, key="1"))
@@ -681,7 +697,9 @@ class Interface(tk.Frame):
     def button_click(self, event=None, key=None):
         print("self.img_canvas_id : ", self.img_canvas_id)
         if self.bool_draw:
-            print("Eliminando")
+            if self.super_pixel_bool:
+                im.imshow(self.segmentation)
+
             self.current_value_saturation.set(0.0)
 
             self.count_feature = 0
@@ -709,6 +727,9 @@ class Interface(tk.Frame):
 
                 self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
                 self.draw_line = ImageDraw.Draw(self.draw_img)
+
+                self.draw_img_gray = PIL.Image.new("L", (self.screen_width, self.screen_height))
+                self.draw_line_gray = ImageDraw.Draw(self.draw_img_gray)
 
             self.draw_lines_array = []
             self.features_polygons = [[]]
@@ -812,6 +833,9 @@ class Interface(tk.Frame):
         self.imgparcela[self.daninha_parcela == 0] = 0
         self.image_down = self.imgparcela.copy()
 
+        self.segmentation = np.zeros_like(self.image_down)
+        self.marker_base = np.zeros(self.image_down.shape[0:2], dtype="int32")
+
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
         self.image_tk = ImageTk.PhotoImage(self.img_array_tk)
@@ -830,7 +854,7 @@ class Interface(tk.Frame):
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
-        if self.polygon_draw:
+        if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
             number_points = len(self.current_points)
 
@@ -853,7 +877,7 @@ class Interface(tk.Frame):
             self.update_img(self.draw_img)
 
     def draw_smth(self, event):
-        if self.pencil_draw:
+        if self.pencil_draw_bool:
             self.lasx, self.lasy = event.x, event.y
 
             self.draw_line.line(
@@ -870,7 +894,36 @@ class Interface(tk.Frame):
             self.bool_draw = True
             self.update_img(self.draw_img)
 
-        elif not self.pencil_draw and not self.polygon_draw:
+        if self.super_pixel_bool:
+            self.lasx, self.lasy = event.x, event.y
+
+            self.draw_line_gray.line(
+                (self.lasx, self.lasy, event.x, event.y),
+                1,
+                width=int(self.slider_pencil),
+                joint="curve",
+            )
+            Offset = (int(self.slider_pencil)) / 2
+            self.draw_line_gray.ellipse(
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
+                1,
+            )
+
+            self.image_array_gray = np.array(self.draw_img_gray, dtype="float32")
+            self.image_array_gray = cv2.resize(self.image_array_gray, (256, 256))
+            self.image_array_gray = np.array(self.image_array_gray, dtype="int32")
+            print(self.image_down.shape, self.image_array_gray.shape)
+
+            self.markers = cv2.watershed(self.image_down, self.image_array_gray)
+            for i in range(self.color_map.__len__()):
+                self.segmentation[self.markers == i + 1] = self.color_map[i]
+
+            self.image_down = self.segmentation.copy()
+
+            self.bool_draw = True
+            self.update_img(self.draw_img_gray)
+
+        elif not self.pencil_draw_bool and not self.polygon_draw_bool:
             self.lasx, self.lasy = event.x, event.y
 
             self.draw_line.line(
@@ -888,10 +941,12 @@ class Interface(tk.Frame):
             self.update_img(self.draw_img)
 
     def update_img(self, img):
+
         self.image = np.array(self.image_down)
         self.image = cv2.resize(self.image, (self.screen_width, self.screen_height))
         self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2RGBA)
         self.image = PIL.Image.fromarray(self.image.copy())
+
         self.image.paste(self.draw_img, (0, 0), self.draw_img)
         self.image_final = ImageTk.PhotoImage(self.image)
         self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
