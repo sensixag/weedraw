@@ -80,9 +80,9 @@ class Interface(tk.Frame):
         self.path_save_img_bin = "dataset/binario"
         self.path_save_img_negative = "dataset/negativos"
         self.directory_saved = ""
-
+        self.frame_root = root
         self.color_line = 0
-
+        self.color_line_rgb = (255, 0, 0)
         # Valores do color_map: BLACK, RED, GREEN, BLUE
         self.color_map = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)]
 
@@ -127,6 +127,8 @@ class Interface(tk.Frame):
         self.background_slider = "#414851"
         self.intern_slider = "#5a636f"
         self.slider_saturation_old = 0
+
+        self.frame = tk.Frame(root)
 
         self.frame_ground = tk.Frame(root)
         self.frame_ground.place(relx=0.0, rely=0.0, relheight=1350, relwidth=740)
@@ -290,8 +292,8 @@ class Interface(tk.Frame):
         self.back_btn.configure(borderwidth="2", background="white")
         self.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
-        self.percent_txt = tk.Label(self.frame_of_options, text="", font=("Helvetica", 12), bg=None)
-        self.percent_txt.place(relx=0.100, rely=0.52, height=21, width=120)
+        # self.percent_txt = tk.Label(self.frame_of_options, text="", font=("Helvetica", 12), bg=None)
+        # self.percent_txt.place(relx=0.100, rely=0.52, height=21, width=120)
 
         self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
         self.canvas.pack()
@@ -481,7 +483,7 @@ class Interface(tk.Frame):
 
     def get_values_spinbox(self, type=""):
 
-        if type == "Comparar Resultados":
+        if type == "Efetuar Marcações por diretorios":
             if self.first_click_bool == False:
                 self.iterator_recoil = float(int(self.spinbox1.get()) / 100)
                 self.iterator_x = int(self.spinbox2.get())
@@ -511,6 +513,27 @@ class Interface(tk.Frame):
         else:
             bool_default = False
             self.bool_value.set(bool_default)
+
+    def keyboard(self, event):
+        self.key_pressed = event.char
+
+        if self.key_pressed == "r":
+            self.color_line = 1
+            print("r")
+
+        if self.key_pressed == "g":
+            self.color_line = 2
+            print("g")
+
+        if self.key_pressed == "b":
+            self.color_line = 3
+            print("b")
+
+        # else:
+        #    self.color_line = 0
+        #    print("Black")
+
+        self.color_line_rgb = self.color_map[self.color_line]
 
     def get_btn(self, event, key):
         self.event_btn = key
@@ -667,7 +690,6 @@ class Interface(tk.Frame):
             self.back_btn.place(relx=0.031, rely=0.363, height=83, width=43)
             self.back_btn.configure(borderwidth="2")
             self.back_btn.bind("<Button-1>", partial(self.change_dir, key="0"))
-
             self.image_tk = self.load_image_in_screen(np.zeros(self.screen_width, self.screen_width, 3))
 
     def run(self):
@@ -698,6 +720,14 @@ class Interface(tk.Frame):
         print("self.img_canvas_id : ", self.img_canvas_id)
         if self.bool_draw:
             if self.super_pixel_bool:
+                self.markers = cv2.watershed(self.image_down, self.image_array_gray)
+                for i in range(self.color_map.__len__()):
+                    self.segmentation[self.markers == i + 1] = self.color_map[i]
+
+                self.image_down = self.segmentation.copy()
+
+                self.bool_draw = True
+                self.update_img(self.draw_img_gray)
                 im.imshow(self.segmentation)
 
             self.current_value_saturation.set(0.0)
@@ -821,11 +851,11 @@ class Interface(tk.Frame):
         self.daninha_parcela = self.daninha_band_1.ReadAsArray(
             self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
         )
-        self.percent_txt["text"] = (
-            "Progress : "
-            + str(self.percent_progress(self.x_crop, self.y_crop, self.mosaico.RasterXSize, self.mosaico.RasterYSize))
-            + "%"
-        )
+        # self.percent_txt["text"] = (
+        #    "Progress : "
+        #    + str(self.percent_progress(self.x_crop, self.y_crop, self.mosaico.RasterXSize, self.mosaico.RasterYSize))
+        #    + "%"
+        # )
         blueparcela = self.blue.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
         greenparcela = self.green.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
         redparcela = self.red.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
@@ -847,10 +877,17 @@ class Interface(tk.Frame):
         self.canvas.bind("<Button-1>", self.get_x_and_y)
         self.canvas.bind("<Button 3>", self.right_click)
         self.canvas.bind("<B1-Motion>", self.draw_smth)
+        self.frame_root.bind("<KeyPress>", self.keyboard)
+        self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
+
+        self.canvas.pack()
 
     def right_click(self, event):
         self.current_points.clear()
         self.count_feature += 1
+
+    def mouse_release(self, event):
+        print("MouseRelease")
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
@@ -859,12 +896,16 @@ class Interface(tk.Frame):
             number_points = len(self.current_points)
 
             if number_points > 2:
-                self.draw_line.polygon((self.current_points), fill="red", outline="red")
+                self.draw_line.polygon(
+                    (self.current_points),
+                    (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
+                    outline="red",
+                )
 
             elif number_points == 2:
                 self.draw_line.line(
                     (self.lasx, self.lasy, event.x, event.y),
-                    (255, 0, 0, int(self.current_value_opacity.get())),
+                    (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
                     width=5,
                     joint="curve",
                 )
@@ -872,7 +913,7 @@ class Interface(tk.Frame):
             Offset = (10) / 2
             self.draw_line.ellipse(
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
-                (0, 255, 0, int(self.current_value_opacity.get())),
+                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
             )
             self.update_img(self.draw_img)
 
@@ -882,14 +923,14 @@ class Interface(tk.Frame):
 
             self.draw_line.line(
                 (self.lasx, self.lasy, event.x, event.y),
-                (255, 0, 0, int(self.current_value_opacity.get())),
+                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
                 width=int(self.slider_pencil),
                 joint="curve",
             )
             Offset = (int(self.slider_pencil)) / 2
             self.draw_line.ellipse(
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
-                (255, 0, 0, int(self.current_value_opacity.get())),
+                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
             )
             self.bool_draw = True
             self.update_img(self.draw_img)
@@ -897,31 +938,46 @@ class Interface(tk.Frame):
         if self.super_pixel_bool:
             self.lasx, self.lasy = event.x, event.y
 
+            self.draw_line.line(
+                (self.lasx, self.lasy, event.x, event.y),
+                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
+                width=int(self.slider_pencil),
+                joint="curve",
+            )
+            Offset = (int(self.slider_pencil)) / 2
+            self.draw_line.ellipse(
+                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
+                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
+            )
+            self.update_img(self.draw_img)
+
             self.draw_line_gray.line(
                 (self.lasx, self.lasy, event.x, event.y),
-                1,
+                self.color_line,
                 width=int(self.slider_pencil),
                 joint="curve",
             )
             Offset = (int(self.slider_pencil)) / 2
             self.draw_line_gray.ellipse(
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
-                1,
+                self.color_line,
             )
 
             self.image_array_gray = np.array(self.draw_img_gray, dtype="float32")
             self.image_array_gray = cv2.resize(self.image_array_gray, (256, 256))
             self.image_array_gray = np.array(self.image_array_gray, dtype="int32")
-            print(self.image_down.shape, self.image_array_gray.shape)
 
-            self.markers = cv2.watershed(self.image_down, self.image_array_gray)
-            for i in range(self.color_map.__len__()):
-                self.segmentation[self.markers == i + 1] = self.color_map[i]
+            """
+                self.markers = cv2.watershed(self.image_down, self.image_array_gray)
+                for i in range(self.color_map.__len__()):
+                    self.segmentation[self.markers == i + 1] = self.color_map[i]
 
-            self.image_down = self.segmentation.copy()
+                self.image_down = self.segmentation.copy()
 
+                self.bool_draw = True
+                self.update_img(self.draw_img_gray)
+            """
             self.bool_draw = True
-            self.update_img(self.draw_img_gray)
 
         elif not self.pencil_draw_bool and not self.polygon_draw_bool:
             self.lasx, self.lasy = event.x, event.y
@@ -1127,6 +1183,16 @@ class Interface(tk.Frame):
 
         root.destroy()
 
+
+"""
+class MouseEvents(tk.Frame):
+    def __init__(self, master=None):
+        tk.Frame.__init__(self, master)
+        self.bind("<ButtonRelease-1>", self.mouse_release)
+
+    def mouse_release(self, event):
+        print("MouseRelease")
+"""
 
 if __name__ == "__main__":
 
