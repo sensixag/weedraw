@@ -81,7 +81,7 @@ class Interface(tk.Frame):
         self.path_save_img_negative = "dataset/negativos"
         self.directory_saved = ""
         self.frame_root = root
-        self.color_line = 0
+        self.color_line = 1
         self.color_line_rgb = (255, 0, 0)
         # Valores do color_map: BLACK, RED, GREEN, BLUE
         self.color_map = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)]
@@ -516,7 +516,7 @@ class Interface(tk.Frame):
 
     def keyboard(self, event):
         self.key_pressed = event.char
-
+        # del self.color_line
         if self.key_pressed == "r":
             self.color_line = 1
             print("r")
@@ -534,6 +534,7 @@ class Interface(tk.Frame):
             print("p")
 
         self.color_line_rgb = self.color_map[self.color_line]
+        print(self.color_line)
 
     def get_btn(self, event, key):
         self.event_btn = key
@@ -637,7 +638,7 @@ class Interface(tk.Frame):
             self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
             self.draw_line = ImageDraw.Draw(self.draw_img)
 
-            self.draw_img_gray = PIL.Image.new("I", (self.screen_width, self.screen_height))
+            self.draw_img_gray = PIL.Image.new("L", (self.screen_width, self.screen_height))
             self.draw_line_gray = ImageDraw.Draw(self.draw_img_gray)
 
             self.cnt_validator = []
@@ -719,16 +720,15 @@ class Interface(tk.Frame):
         print("self.img_canvas_id : ", self.img_canvas_id)
         if self.bool_draw:
             if self.super_pixel_bool:
-                print("color_line", self.color_line)
-                print("color_line_rgb", self.color_line_rgb)
                 self.image_for_watershed = self.imgparcela.copy()
+
                 self.segmentation = np.zeros_like(self.image_for_watershed)
+                self.image_for_watershed = cv2.resize(self.image_for_watershed, (self.screen_width, self.screen_height))
+                print(self.image_for_watershed.shape, self.image_array_gray.shape)
 
                 markers = cv2.watershed(self.image_for_watershed.copy(), self.image_array_gray.copy())
-                for i in range(self.color_map.__len__()):
-                    self.segmentation[markers == i + 1] = self.color_map[i]
-
-                # self.image_down = self.segmentation.copy()
+                # for i in range(self.color_map.__len__()):
+                #    self.segmentation[markers == i + 1] = self.color_map[i]
 
                 self.bool_draw = True
                 im.imshow(markers)
@@ -803,12 +803,11 @@ class Interface(tk.Frame):
                 if self.x_crop + self.iterator_x > self.mosaico.RasterXSize:
                     self.x_crop = 0
                     self.y_crop += self.iterator_y * self.iterator_recoil
-                    # print('key 1 - if 1')
 
                 if self.y_crop + self.iterator_y > self.mosaico.RasterYSize:
                     self.x_crop = self.x_crop
                     self.y_crop = self.y_crop
-                    # print('key 1 - if 2')
+
                     mbox.showinfo("Information", "Todo o Mosaico foi Percorrido!")
                     self.destroy_aplication()
                     break
@@ -825,12 +824,10 @@ class Interface(tk.Frame):
                 if self.x_crop <= 0:
                     self.x_crop = self.x_max
                     self.y_crop -= self.iterator_y * self.iterator_recoil
-                    # print('key 0 - if 2')
 
             if self.y_crop - self.iterator_y > self.mosaico.RasterYSize:
                 self.x_crop = 0
                 self.y_crop -= self.iterator_y * self.iterator_recoil
-                # print('aqui2')
 
             self.daninha_parcela = self.daninha_band_1.ReadAsArray(
                 self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
@@ -953,15 +950,11 @@ class Interface(tk.Frame):
             self.update_img(self.draw_img)
 
             self.draw_line_gray.line(
-                ((self.old_x, self.old_y, self.lasx, self.lasy)),
-                self.color_line + 1,
-                width=int(self.slider_pencil),
-                joint=None,
+                ((self.old_x, self.old_y, self.lasx, self.lasy)), self.color_line, width=int(self.slider_pencil)
             )
 
-            self.image_array_gray = np.array(self.draw_img_gray, dtype="float32")
-            self.image_array_gray = cv2.resize(self.image_array_gray, (self.iterator_x, self.iterator_y))
-            # self.image_array_gray = cv2.cvtColor(self.image_array_gray, cv2.COLOR_GRAY2RGB)
+            self.image_array_gray = np.array(self.draw_img_gray.copy(), dtype="float32")
+            ##self.image_array_gray = cv2.resize(self.image_array_gray, (self.iterator_x, self.iterator_y))
             self.image_array_gray = np.array(self.image_array_gray, dtype="int32")
 
             self.bool_draw = True
