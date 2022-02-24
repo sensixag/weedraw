@@ -107,7 +107,7 @@ class Interface(tk.Frame):
 
         self.var = tk.IntVar()
         self.old_choose = ""
-        self.OptionList = ["Efetuar Marcacoes"]
+        self.OptionList = ["Efetuar Marcacoes em Ortomosaicos", "Efetuar Marcacoes por diretorios"]
 
         img = ImageTk.PhotoImage(file="icons/icone_sensix.png")
         root.call("wm", "iconphoto", root._w, img)
@@ -351,7 +351,7 @@ class Interface(tk.Frame):
         self.spinbox_backg.configure(highlightbackground="black")
         self.spinbox_backg.configure(selectbackground="blue")
         self.spinbox_backg.configure(selectforeground="white")
-        self.spinbox_backg.configure(command=partial(self.get_values_spinbox, type="Efetuar Marcacoes"))
+        self.spinbox_backg.configure(command=partial(self.get_values_spinbox, type="Efetuar Marcacoes em Ortomosaicos"))
 
         self.btn_start = tk.Button(root)
         self.btn_start.place(relx=0.742, rely=0.871, height=48, width=123)
@@ -483,13 +483,13 @@ class Interface(tk.Frame):
 
     def get_values_spinbox(self, type=""):
 
-        if type == "Efetuar Marcações por diretorios":
+        if type == "Efetuar Marcacoes por diretorios":
             if self.first_click_bool == False:
                 self.iterator_recoil = float(int(self.spinbox1.get()) / 100)
                 self.iterator_x = int(self.spinbox2.get())
                 self.iterator_y = int(self.spinbox3.get())
 
-        elif type == "Efetuar Marcacoes":
+        elif type == "Efetuar Marcacoes em Ortomosaicos":
             self.background_percent = float(1 - int(self.spinbox_backg.get()) / 100)
             # self.iterator_x = int(self.spinbox2.get())
             # self.iterator_y = int(self.spinbox3.get())
@@ -529,9 +529,9 @@ class Interface(tk.Frame):
             self.color_line = 3
             print("b")
 
-        # else:
-        #    self.color_line = 0
-        #    print("Black")
+        if self.key_pressed == "p":
+            self.color_line = 0
+            print("p")
 
         self.color_line_rgb = self.color_map[self.color_line]
 
@@ -637,7 +637,7 @@ class Interface(tk.Frame):
             self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
             self.draw_line = ImageDraw.Draw(self.draw_img)
 
-            self.draw_img_gray = PIL.Image.new("L", (self.screen_width, self.screen_height))
+            self.draw_img_gray = PIL.Image.new("I", (self.screen_width, self.screen_height))
             self.draw_line_gray = ImageDraw.Draw(self.draw_img_gray)
 
             self.cnt_validator = []
@@ -696,8 +696,7 @@ class Interface(tk.Frame):
         self.labelling_start()
 
     def callback_opt(self, *args):
-        if self.variable.get() == "Efetuar Marcacoes":
-
+        if self.variable.get() == "Efetuar Marcacoes em Ortomosaicos":
             if not os.path.isdir(self.path_save_img_rgb):
                 os.makedirs(self.path_save_img_rgb, exist_ok=True)
 
@@ -720,15 +719,19 @@ class Interface(tk.Frame):
         print("self.img_canvas_id : ", self.img_canvas_id)
         if self.bool_draw:
             if self.super_pixel_bool:
-                self.markers = cv2.watershed(self.image_down, self.image_array_gray)
-                for i in range(self.color_map.__len__()):
-                    self.segmentation[self.markers == i + 1] = self.color_map[i]
+                print("color_line", self.color_line)
+                print("color_line_rgb", self.color_line_rgb)
+                self.image_for_watershed = self.imgparcela.copy()
+                self.segmentation = np.zeros_like(self.image_for_watershed)
 
-                self.image_down = self.segmentation.copy()
+                markers = cv2.watershed(self.image_for_watershed.copy(), self.image_array_gray.copy())
+                for i in range(self.color_map.__len__()):
+                    self.segmentation[markers == i + 1] = self.color_map[i]
+
+                # self.image_down = self.segmentation.copy()
 
                 self.bool_draw = True
-                self.update_img(self.draw_img_gray)
-                im.imshow(self.segmentation)
+                im.imshow(markers)
 
             self.current_value_saturation.set(0.0)
 
@@ -750,7 +753,7 @@ class Interface(tk.Frame):
                 )
                 cv2.imwrite(
                     self.path_save_img_bin + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                    self.save_draw_array,
+                    self.image_array_gray,
                 )
                 self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
                 self.dst_img.FlushCache()
@@ -859,12 +862,10 @@ class Interface(tk.Frame):
         blueparcela = self.blue.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
         greenparcela = self.green.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
         redparcela = self.red.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
-        self.imgparcela = cv2.merge((blueparcela, greenparcela, redparcela))
+        self.imgparcela = cv2.merge((redparcela, greenparcela, blueparcela))
         self.imgparcela[self.daninha_parcela == 0] = 0
         self.image_down = self.imgparcela.copy()
-
         self.segmentation = np.zeros_like(self.image_down)
-        self.marker_base = np.zeros(self.image_down.shape[0:2], dtype="int32")
 
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
@@ -917,12 +918,14 @@ class Interface(tk.Frame):
             )
             self.update_img(self.draw_img)
 
-    def draw_smth(self, event):
-        if self.pencil_draw_bool:
-            self.lasx, self.lasy = event.x, event.y
+        self.old_x = self.lasx
+        self.old_y = self.lasy
 
+    def draw_smth(self, event):
+        self.lasx, self.lasy = event.x, event.y
+        if self.pencil_draw_bool:
             self.draw_line.line(
-                (self.lasx, self.lasy, event.x, event.y),
+                (self.old_x, self.old_y, self.lasx, self.lasy),
                 (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
                 width=int(self.slider_pencil),
                 joint="curve",
@@ -937,12 +940,10 @@ class Interface(tk.Frame):
 
         if self.super_pixel_bool:
             self.lasx, self.lasy = event.x, event.y
-
             self.draw_line.line(
-                (self.lasx, self.lasy, event.x, event.y),
+                ((self.old_x, self.old_y, self.lasx, self.lasy)),
                 (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
                 width=int(self.slider_pencil),
-                joint="curve",
             )
             Offset = (int(self.slider_pencil)) / 2
             self.draw_line.ellipse(
@@ -952,40 +953,26 @@ class Interface(tk.Frame):
             self.update_img(self.draw_img)
 
             self.draw_line_gray.line(
-                (self.lasx, self.lasy, event.x, event.y),
-                self.color_line,
+                ((self.old_x, self.old_y, self.lasx, self.lasy)),
+                self.color_line + 1,
                 width=int(self.slider_pencil),
-                joint="curve",
-            )
-            Offset = (int(self.slider_pencil)) / 2
-            self.draw_line_gray.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
-                self.color_line,
+                joint=None,
             )
 
             self.image_array_gray = np.array(self.draw_img_gray, dtype="float32")
-            self.image_array_gray = cv2.resize(self.image_array_gray, (256, 256))
+            self.image_array_gray = cv2.resize(self.image_array_gray, (self.iterator_x, self.iterator_y))
+            # self.image_array_gray = cv2.cvtColor(self.image_array_gray, cv2.COLOR_GRAY2RGB)
             self.image_array_gray = np.array(self.image_array_gray, dtype="int32")
 
-            """
-                self.markers = cv2.watershed(self.image_down, self.image_array_gray)
-                for i in range(self.color_map.__len__()):
-                    self.segmentation[self.markers == i + 1] = self.color_map[i]
-
-                self.image_down = self.segmentation.copy()
-
-                self.bool_draw = True
-                self.update_img(self.draw_img_gray)
-            """
             self.bool_draw = True
 
         elif not self.pencil_draw_bool and not self.polygon_draw_bool:
             self.lasx, self.lasy = event.x, event.y
 
             self.draw_line.line(
-                (self.lasx, self.lasy, event.x, event.y),
+                (self.old_x, self.old_y, self.lasx, self.lasy),
                 (0, 0, 0, 0),
-                width=20,
+                width=int(self.slider_pencil / 2),
                 joint="curve",
             )
             Offset = int(self.slider_pencil / 2)
@@ -995,6 +982,9 @@ class Interface(tk.Frame):
             )
             self.bool_draw = True
             self.update_img(self.draw_img)
+
+        self.old_x = self.lasx
+        self.old_y = self.lasy
 
     def update_img(self, img):
 
