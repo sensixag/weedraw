@@ -875,18 +875,27 @@ class Interface(tk.Frame):
 
             self.image_for_watershed = cv2.resize(self.image_for_watershed, (self.screen_width, self.screen_height))
             self.segmentation = np.zeros_like(self.image_for_watershed)
-            print(self.image_for_watershed.shape, self.image_array_gray.shape)
 
             markers = cv2.watershed(self.image_for_watershed.copy(), self.image_array_gray.copy())
-            # markers = cv2.resize(markers, (self.iterator_x, self.iterator_y))
 
             for i in range(self.color_map.__len__()):
                 self.segmentation[markers == i + 1] = self.color_map[i]
 
             self.bool_draw = True
-            self.update_img(self.draw_img)
-            self.image_down = self.segmentation
-            print("Updated:")
+            # self.segmentation = cv2.resize(self.segmentation, (self.iterator_x, self.iterator_y))
+            # self.image_down[self.segmentation != 0] = 255
+
+            self.segmentation = cv2.cvtColor(self.segmentation, cv2.COLOR_RGB2RGBA)
+            self.draw_img_w = np.array(self.draw_img)
+
+            self.draw_img_w[self.segmentation[:, :, 0] > 0] = [255, 0, 0, self.slider_opacity]
+            # im.imshow(self.draw_img_w)
+            self.draw_img = Image.fromarray(self.draw_img_w)
+
+            self.image.paste(self.draw_img, (0, 0), self.draw_img)
+            self.image_final = ImageTk.PhotoImage(self.image)
+            self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
+            # self.update_img(self.draw_img)
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
