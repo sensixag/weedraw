@@ -516,7 +516,6 @@ class Interface(tk.Frame):
 
     def keyboard(self, event):
         self.key_pressed = event.char
-        # del self.color_line
         if self.key_pressed == "r":
             self.color_line = 1
             print("r")
@@ -719,20 +718,6 @@ class Interface(tk.Frame):
     def button_click(self, event=None, key=None):
         print("self.img_canvas_id : ", self.img_canvas_id)
         if self.bool_draw:
-            if self.super_pixel_bool:
-                self.image_for_watershed = self.imgparcela.copy()
-
-                self.segmentation = np.zeros_like(self.image_for_watershed)
-                self.image_for_watershed = cv2.resize(self.image_for_watershed, (self.screen_width, self.screen_height))
-                print(self.image_for_watershed.shape, self.image_array_gray.shape)
-
-                markers = cv2.watershed(self.image_for_watershed.copy(), self.image_array_gray.copy())
-                # for i in range(self.color_map.__len__()):
-                #    self.segmentation[markers == i + 1] = self.color_map[i]
-
-                self.bool_draw = True
-                im.imshow(markers)
-
             self.current_value_saturation.set(0.0)
 
             self.count_feature = 0
@@ -753,7 +738,7 @@ class Interface(tk.Frame):
                 )
                 cv2.imwrite(
                     self.path_save_img_bin + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                    self.image_array_gray,
+                    self.save_draw_array,
                 )
                 self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
                 self.dst_img.FlushCache()
@@ -885,7 +870,23 @@ class Interface(tk.Frame):
         self.count_feature += 1
 
     def mouse_release(self, event):
-        print("MouseRelease")
+        if self.super_pixel_bool:
+            self.image_for_watershed = self.imgparcela.copy()
+
+            self.image_for_watershed = cv2.resize(self.image_for_watershed, (self.screen_width, self.screen_height))
+            self.segmentation = np.zeros_like(self.image_for_watershed)
+            print(self.image_for_watershed.shape, self.image_array_gray.shape)
+
+            markers = cv2.watershed(self.image_for_watershed.copy(), self.image_array_gray.copy())
+            # markers = cv2.resize(markers, (self.iterator_x, self.iterator_y))
+
+            for i in range(self.color_map.__len__()):
+                self.segmentation[markers == i + 1] = self.color_map[i]
+
+            self.bool_draw = True
+            self.update_img(self.draw_img)
+            self.image_down = self.segmentation
+            print("Updated:")
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
