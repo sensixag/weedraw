@@ -532,6 +532,10 @@ class Interface(tk.Frame):
             self.color_line = 0
             print("p")
 
+        if self.super_pixel_bool:
+            self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
+            self.draw_line = ImageDraw.Draw(self.draw_img)
+
         self.color_line_rgb = self.color_map[self.color_line]
         print(self.color_line)
 
@@ -886,16 +890,19 @@ class Interface(tk.Frame):
             # self.image_down[self.segmentation != 0] = 255
 
             self.segmentation = cv2.cvtColor(self.segmentation, cv2.COLOR_RGB2RGBA)
-            self.draw_img_w = np.array(self.draw_img)
+            self.segmentation = Image.fromarray(self.segmentation)
+            ##
+            image_new = []
+            for item in self.segmentation.getdata():
+                if item[:3] == (0, 0, 0):
+                    image_new.append((0, 0, 0, 0))
+                else:
+                    image_new.append(item)
 
-            self.draw_img_w[self.segmentation[:, :, 0] > 0] = [255, 0, 0, self.slider_opacity]
-            # im.imshow(self.draw_img_w)
-            self.draw_img = Image.fromarray(self.draw_img_w)
+            self.segmentation.putdata(image_new)
 
-            self.image.paste(self.draw_img, (0, 0), self.draw_img)
-            self.image_final = ImageTk.PhotoImage(self.image)
-            self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
-            # self.update_img(self.draw_img)
+            self.draw_img.paste(self.segmentation, (0, 0), self.segmentation)
+            self.update_img(self.draw_img)
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
