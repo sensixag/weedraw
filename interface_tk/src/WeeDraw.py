@@ -545,8 +545,21 @@ class Interface(tk.Frame):
                 img = self.neural_network.predict_image(self.imgparcela)
 
             img = cv2.resize(img, (self.screen_width, self.screen_height))
-            img = Image.fromarray(img)
+            img = imp.gray_to_rgba(self, img)
 
+            image_new = []
+            for channel in range(img.shape[-1] - 1):
+                img[img[:, :, channel] == 255] = [0, 0, 255, self.slider_opacity]
+
+            img = Image.fromarray(img)
+            for item in img.getdata():
+
+                if item[:3] == (0, 0, 0):
+                    image_new.append((0, 0, 0, 0))
+                else:
+                    image_new.append(item[:3] + (self.slider_opacity,))
+
+            img.putdata(image_new)
             self.draw_img.paste(img, (0, 0), img)
 
         if self.super_pixel_bool:

@@ -111,6 +111,11 @@ class ImagesManipulations:
 
         return _img
 
+    def gray_to_rgba(self, img):
+        _img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGBA)
+
+        return _img
+
     def adjust_pixels(self, src, tolerancy):
         """
         funcao para ajustar os pixels com base em uma tolerancia, eliminando contornos com areas
