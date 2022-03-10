@@ -25,10 +25,14 @@ except ImportError:
 
 from typing import Text
 from functools import partial
-from tkinter import PhotoImage, messagebox as mbox
+from tkinter import Button, PhotoImage, messagebox as mbox
 from PIL import Image, ImageDraw, ImageTk
 from tkinter import filedialog
 from osgeo import gdal, ogr, osr
+
+from callbacks_tk import Screen
+from menu import Buttons
+from neural import NeuralFunctions
 from neural import ImagesManipulations as imp
 from imgs_manipulations import SatureImg
 
@@ -122,6 +126,13 @@ class Interface(tk.Frame):
         root.resizable(0, 0)
         root.title("WeeDraw")
 
+        self.label1.destroy()
+        self.opt.destroy()
+
+        self.label1 = tk.Label(root)
+        self.label1.place(relx=0.090, rely=0.52, height=21, width=200)
+        self.label1.configure(activebackground="#f9f9f9", text="Selecione o Mosaico :")
+
         self.color_frame_options = "#414851"
         self.color_background = "#262930"
         self.color_frame_over_center = "black"
@@ -140,9 +151,9 @@ class Interface(tk.Frame):
         self.background_slider = "#414851"
         self.intern_slider = "#5a636f"
 
-        self.set_slider_saturation = tk.Label(root, text=self.get_current_value_saturation())
-        self.set_slider_contourn = tk.Label(root, text=self.get_current_value_contourn())
-        self.set_slider_opacity = tk.Label(root, text=self.get_current_value_opacity())
+        self.set_slider_saturation = tk.Label(root, text="")
+        self.set_slider_contourn = tk.Label(root, text="")
+        self.set_slider_opacity = tk.Label(root, text="")
 
         # Tela inferior com botoes
         self.frame_below_center = tk.Frame(root)
@@ -237,65 +248,22 @@ class Interface(tk.Frame):
         self.frame = tk.Frame(root, bd=2, relief=tk.SUNKEN)
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
-        self.canvas = tk.Canvas(
-            self.frame_over_center,
-            bd=0,
-            width=self.screen_width,
-            height=self.screen_height,
-        )
+
+        self.canvas = Screen(tk, self.frame_over_center, self.screen_width, self.screen_height).define_canvas()
 
         self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
         self.frame_over_center.pack(expand=1)
 
-        self.pencil_icon = PhotoImage(file=r"../icons/pencil_black_white.png")
-        self.pencil_icon = self.pencil_icon.subsample(2, 2)
-        self.pencil_btn = tk.Button(self.frame_below_center, image=self.pencil_icon)
-        self.pencil_btn.place(relx=0.006, rely=0.004, height=43, width=43)
-        self.pencil_btn.configure(borderwidth="2", text="Button", background=self.color_buttons_center)
-        self.pencil_btn.bind("<Button-1>", partial(self.get_btn, key="6"))
+        self.buttons = Buttons(root, tk, self.frame_below_center)
+        self.buttons.button_start()
 
-        self.erase_icon = ImageTk.PhotoImage(file=r"../icons/eraser_black.png")
-        self.erase_btn = tk.Button(self.frame_below_center, image=self.erase_icon)
-        self.erase_btn.place(relx=0.006, rely=0.135, height=43, width=43)
-        self.erase_btn.configure(borderwidth="2", text="Button", background=self.color_buttons_center)
-        self.erase_btn.bind("<Button-1>", partial(self.get_btn, key="7"))
-
-        self.polygon_icon = ImageTk.PhotoImage(file=r"../icons/polygon.png")
-        self.polygon_btn = tk.Button(self.frame_below_center, image=self.polygon_icon)
-        self.polygon_btn.place(relx=0.006, rely=0.07, height=43, width=43)
-        self.polygon_btn.configure(borderwidth="2", text="Button", background=self.color_buttons_center)
-        self.polygon_btn.bind("<Button-1>", partial(self.get_btn, key="9"))
-
-        self.hide_layer_icon = ImageTk.PhotoImage(file=r"../icons/hide_layer.png")
-        self.hide_layer_btn = tk.Button(self.frame_below_center, image=self.hide_layer_icon)
-        self.hide_layer_btn.place(relx=0.006, rely=0.2, height=43, width=43)
-        self.hide_layer_btn.configure(
-            activebackground="#f9f9f9", borderwidth="2", text="Button", background=self.color_buttons_center
-        )
-        self.hide_layer_btn.bind("<Button-1>", partial(self.get_btn, key="8"))
-
-        self.super_pixel_icon = ImageTk.PhotoImage(file=r"../icons/s_pixel.png")
-        self.super_pixel_btn = tk.Button(self.frame_below_center, image=self.super_pixel_icon)
-        self.super_pixel_btn.place(relx=0.006, rely=0.265, height=43, width=43)
-        self.super_pixel_btn.configure(
-            activebackground="#f9f9f9", borderwidth="2", text="Button", background=self.color_buttons_center
-        )
-        self.super_pixel_btn.bind("<Button-1>", partial(self.get_btn, key="10"))
-
-        self.next_icon = PhotoImage(file=r"../icons/next.png")
-        self.next_btn = tk.Button(root, image=self.next_icon)
-        self.next_btn.place(relx=0.957, rely=0.43, height=70, width=43)
-        self.next_btn.configure(borderwidth="2", background="white")
-        self.next_btn.bind("<Button-1>", partial(self.get_btn, key="Next"))
-
-        self.back_icon = PhotoImage(file=r"../icons/back.png")
-        self.back_btn = tk.Button(root, image=self.back_icon)
-        self.back_btn.place(relx=0.183, rely=0.43, height=70, width=43)
-        self.back_btn.configure(borderwidth="2", background="white")
-        self.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
-
-        # self.percent_txt = tk.Label(self.frame_of_options, text="", font=("Helvetica", 12), bg=None)
-        # self.percent_txt.place(relx=0.100, rely=0.52, height=21, width=120)
+        self.buttons.pencil_btn.bind("<Button-1>", partial(self.get_btn, key="6"))
+        self.buttons.erase_btn.bind("<Button-1>", partial(self.get_btn, key="7"))
+        self.buttons.polygon_btn.bind("<Button-1>", partial(self.get_btn, key="9"))
+        self.buttons.hide_layer_btn.bind("<Button-1>", partial(self.get_btn, key="8"))
+        self.buttons.super_pixel_btn.bind("<Button-1>", partial(self.get_btn, key="10"))
+        self.buttons.next_btn.bind("<Button-1>", partial(self.get_btn, key="Next"))
+        self.buttons.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
         self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
         self.canvas.pack()
@@ -313,7 +281,7 @@ class Interface(tk.Frame):
 
         return self.image_front
 
-    def labelling_menu(self):
+    def settings_labelling_menu(self):
 
         self.label1.destroy()
         self.opt.destroy()
@@ -451,13 +419,12 @@ class Interface(tk.Frame):
         self.set_slider_saturation.configure(text=self.get_current_value_saturation())
 
     # Metodos para receber os valores do slider de contorno
-    def get_current_value_contourn(self):
+    def slider_changed_contourn(self, event):
         self.slider_pencil = self.current_value_contourn.get()
         if self.slider_pencil < 10:
             self.slider_pencil = 10
 
-    def slider_changed_contourn(self, event):
-        self.set_slider_contourn.configure(text=self.get_current_value_contourn())
+        self.set_slider_contourn.configure(text=self.current_value_contourn.get())
 
     # Metodos para receber os valores do slider de opacidade
     def get_current_value_opacity(self):
@@ -519,8 +486,6 @@ class Interface(tk.Frame):
 
         if self.key_pressed == "n":
             if not self.use_neural_network:
-                from neural import NeuralFunctions
-
                 self.use_neural_network = True
                 self.path_neural_network = filedialog.askopenfilename(title="Selecione os pesos da rede neural :")
                 self.neural_network = NeuralFunctions(self.path_neural_network)
@@ -660,8 +625,8 @@ class Interface(tk.Frame):
 
             self.cnt_validator = []
 
-            self.next_btn.bind("<Button-1>", partial(self.button_click, key="1"))
-            self.back_btn.bind("<Button-1>", partial(self.button_click, key="0"))
+            self.buttons.next_btn.bind("<Button-1>", partial(self.button_click, key="1"))
+            self.buttons.back_btn.bind("<Button-1>", partial(self.button_click, key="0"))
 
         if self.ready_start:
             self.remove_buttons("Start")
@@ -708,7 +673,6 @@ class Interface(tk.Frame):
             self.back_btn.place(relx=0.031, rely=0.363, height=83, width=43)
             self.back_btn.configure(borderwidth="2")
             self.back_btn.bind("<Button-1>", partial(self.change_dir, key="0"))
-            self.image_tk = self.load_image_in_screen(np.zeros(self.screen_width, self.screen_width, 3))
 
     def run(self):
         self.labelling_start()
@@ -724,7 +688,7 @@ class Interface(tk.Frame):
             if not os.path.isdir(self.path_save_img_negative):
                 os.makedirs(self.path_save_img_negative, exist_ok=True)
 
-            self.labelling_menu()
+            self.settings_labelling_menu()
 
         self.old_choose = self.variable.get()
 
@@ -734,7 +698,7 @@ class Interface(tk.Frame):
         return current_position
 
     def button_click(self, event=None, key=None):
-        print("self.img_canvas_id : ", self.img_canvas_id)
+        print("key :", key)
         if self.bool_draw:
             self.current_value_saturation.set(0.0)
 
