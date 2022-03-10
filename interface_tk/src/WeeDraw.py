@@ -30,6 +30,7 @@ from PIL import Image, ImageDraw, ImageTk
 from tkinter import filedialog
 from osgeo import gdal, ogr, osr
 from neural import ImagesManipulations as imp
+from imgs_manipulations import SatureImg
 
 
 class Interface(tk.Frame):
@@ -430,32 +431,15 @@ class Interface(tk.Frame):
         label_init = tk.Label(root, text=text_val)
         self.canvas_init.create_window(200, 230, window=label_init)
 
-    def saturation(self, image, increment):
-        image_hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        h, s, v = cv2.split(image_hsv)
-        print("smax", s.max())
-        if s.max() < 255:
-            if self.slider_saturation > self.slider_saturation_old:
-                s += int(increment)
-                print(increment)
-                print(s.max())
-
-        elif self.slider_saturation < self.slider_saturation_old:
-            print("s")
-            s -= int(increment)
-
-        image_saturated = cv2.merge((h, s, v))
-        image_saturated = cv2.cvtColor(image_saturated, cv2.COLOR_HSV2RGB)
-
-        return image_saturated
-
     # Metodos para receber os valores do slider de saturação
     def get_current_value_saturation(self):
         self.slider_saturation = int(self.current_value_saturation.get())
         print("valor slider :", self.slider_saturation)
         if self.bool_draw:
             print("Na condicao")
-            self.image_down = self.saturation(image=self.image_down, increment=10)
+            self.image_down = SatureImg().saturation(
+                self.image_down, self.slider_saturation - self.slider_saturation_old
+            )
 
             if self.slider_saturation <= 10:
                 self.image_down = self.imgparcela.copy()
@@ -892,14 +876,14 @@ class Interface(tk.Frame):
         self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
         self.canvas.bind("<Button-1>", self.get_x_and_y)
-        self.canvas.bind("<Button 3>", self.right_click)
+        self.canvas.bind("<Button 3>", self.get_right_click)
         self.canvas.bind("<B1-Motion>", self.draw_smth)
         self.frame_root.bind("<KeyPress>", self.keyboard)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
 
         self.canvas.pack()
 
-    def right_click(self, event):
+    def get_right_click(self, event):
         self.current_points.clear()
         self.count_feature += 1
 
@@ -1213,16 +1197,6 @@ class Interface(tk.Frame):
 
         root.destroy()
 
-
-"""
-class MouseEvents(tk.Frame):
-    def __init__(self, master=None):
-        tk.Frame.__init__(self, master)
-        self.bind("<ButtonRelease-1>", self.mouse_release)
-
-    def mouse_release(self, event):
-        print("MouseRelease")
-"""
 
 if __name__ == "__main__":
 
