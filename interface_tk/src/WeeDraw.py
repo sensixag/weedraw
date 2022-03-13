@@ -31,10 +31,11 @@ from tkinter import filedialog
 from osgeo import gdal, ogr, osr
 
 from callbacks_tk import Screen
-from menu import Buttons
+from menu import ButtonSettingsLabelling, ButtonsLabelling
 from neural import NeuralFunctions
-from neural import ImagesManipulations as imp
 from imgs_manipulations import SatureImg
+from imgs_manipulations import ImagesManipulations as imp
+from draw import Draw
 
 
 class Interface(tk.Frame):
@@ -254,7 +255,7 @@ class Interface(tk.Frame):
         self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
         self.frame_over_center.pack(expand=1)
 
-        self.buttons = Buttons(root, tk, self.frame_below_center)
+        self.buttons = ButtonsLabelling(root, tk, self.frame_below_center)
         self.buttons.button_start()
 
         self.buttons.pencil_btn.bind("<Button-1>", partial(self.get_btn, key="6"))
@@ -271,16 +272,6 @@ class Interface(tk.Frame):
         self.current_value_opacity.set(50.0)
         self.current_value_contourn.set(1)
 
-    def load_image_in_screen(self, img):
-        img = cv2.resize(img, (self.screen_width, self.screen_height))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        self.image_down = img.copy()
-        img = PIL.Image.fromarray(img)
-
-        self.image_front = ImageTk.PhotoImage(img)
-
-        return self.image_front
-
     def settings_labelling_menu(self):
 
         self.label1.destroy()
@@ -291,22 +282,10 @@ class Interface(tk.Frame):
         self.label1.configure(activebackground="#f9f9f9")
         self.label1.configure(text="Selecione o Mosaico :")
 
-        self.btn_load_mosaico = tk.Button(root)
-        self.btn_load_mosaico.place(relx=0.72, rely=0.52, height=28, width=123)
-        self.btn_load_mosaico.configure(takefocus="")
-        self.btn_load_mosaico.configure(text="Mosaico")
-        self.btn_load_mosaico.bind("<Button-1>", partial(self.get_btn, key="0"))
-
         self.label2 = tk.Label(root)
         self.label2.place(relx=0.11, rely=0.60, height=21, width=200)
         self.label2.configure(activebackground="#f9f9f9")
         self.label2.configure(text="Selecione o Shape de Base :")
-
-        self.btn_shape_reference = tk.Button(root)
-        self.btn_shape_reference.place(relx=0.72, rely=0.60, height=28, width=123)
-        self.btn_shape_reference.configure(takefocus="")
-        self.btn_shape_reference.configure(text="Shape de Base")
-        self.btn_shape_reference.bind("<Button-1>", partial(self.get_btn, key="3"))
 
         self.label3 = tk.Label(root)
         self.label3.place(relx=0.117, rely=0.68, height=21, width=260)
@@ -315,31 +294,33 @@ class Interface(tk.Frame):
 
         self.spinbox_backg = tk.Spinbox(root, from_=5.0, to=100.0, increment=5, textvariable=self.spn_box_1)
         self.spinbox_backg.place(relx=0.63, rely=0.69, relheight=0.046, relwidth=0.243)
-        self.spinbox_backg.configure(activebackground="#f9f9f9")
-        self.spinbox_backg.configure(background="white")
-        self.spinbox_backg.configure(font="TkDefaultFont")
-        self.spinbox_backg.configure(highlightbackground="black")
-        self.spinbox_backg.configure(selectbackground="blue")
-        self.spinbox_backg.configure(selectforeground="white")
-        self.spinbox_backg.configure(command=partial(self.get_values_spinbox, type="Efetuar Marcacoes em Ortomosaicos"))
+        self.spinbox_backg.configure(
+            activebackground="#f9f9f9",
+            background="white",
+            font="TkDefaultFont",
+            highlightbackground="black",
+            selectbackground="blue",
+            selectforeground="white",
+            command=partial(self.get_values_spinbox, type="Efetuar Marcacoes em Ortomosaicos"),
+        )
 
-        self.btn_start = tk.Button(root)
-        self.btn_start.place(relx=0.742, rely=0.871, height=48, width=123)
-        self.btn_start.configure(takefocus="")
-        self.btn_start.configure(text="Iniciar")
-        self.btn_start.bind("<Button-1>", partial(self.get_btn, key="5"))
+        self.buttons = ButtonSettingsLabelling(root, tk)
+        self.buttons.settings_labelling_menu()
+        self.buttons.btn_load_mosaico.bind("<Button-1>", partial(self.get_btn, key="0"))
+        self.buttons.btn_shape_reference.bind("<Button-1>", partial(self.get_btn, key="3"))
+        self.buttons.btn_start.bind("<Button-1>", partial(self.get_btn, key="5"))
 
     def first_menu(self, app):
 
         self.logo = PhotoImage(file=r"../icons/Logo-Escuro.png")
         self.logo = self.logo.subsample(5, 5)
-        self.canvas1 = tk.Canvas(root)
-        self.canvas1.place(relx=0.117, rely=0.111, relheight=0.291, relwidth=0.752)
-        self.canvas1.configure(borderwidth="2")
-        self.canvas1.configure(relief="ridge")
-        self.canvas1.configure(selectbackground="blue")
-        self.canvas1.configure(selectforeground="white")
-        self.canvas1.create_image(300, 90, image=self.logo, anchor="center")
+        self.canvas_first_menu = tk.Canvas(root)
+        self.canvas_first_menu.place(relx=0.117, rely=0.111, relheight=0.291, relwidth=0.752)
+        self.canvas_first_menu.configure(borderwidth="2")
+        self.canvas_first_menu.configure(relief="ridge")
+        self.canvas_first_menu.configure(selectbackground="blue")
+        self.canvas_first_menu.configure(selectforeground="white")
+        self.canvas_first_menu.create_image(300, 90, image=self.logo, anchor="center")
 
         self.label1 = tk.Label(root)
         self.label1.place(relx=0.25, rely=0.578, height=21, width=200)
@@ -359,36 +340,11 @@ class Interface(tk.Frame):
     def remove_buttons(self, option="First Menu"):
         if option == "Draw Menu":
             self.label2.destroy()
-            self.btn_shape_reference.destroy()
             self.label3.destroy()
             self.spinbox_backg.destroy()
-            self.btn_start.destroy()
-            self.btn_load_mosaico.destroy()
-            # self.spinbox3.destroy()
-            # self.spinbox2.destroy()
-            # self.label4.destroy()
-            # self.label5.destroy()
-
-        elif option == "Start":
-            self.TSeparator1.destroy()
-            self.btn_load_mosaico.destroy()
-            self.btn_shape_reference.destroy()
-            self.btn_shape_neural.destroy()
-            self.btn_start.destroy()
-            self.spinbox1.destroy()
-            self.spinbox2.destroy()
-            self.spinbox3.destroy()
-            self.Radiobutton1.destroy()
-            self.label1.destroy()
-            self.label2.destroy()
-            self.label3.destroy()
-            self.label4.destroy()
-            self.label5.destroy()
-            self.label6.destroy()
-            self.label7.destroy()
 
         else:
-            self.canvas1.destroy()
+            self.canvas_first_menu.destroy()
             self.label1.destroy()
             self.opt.destroy()
             self.label_opt.destroy()
@@ -443,28 +399,12 @@ class Interface(tk.Frame):
 
         elif type == "Efetuar Marcacoes em Ortomosaicos":
             self.background_percent = float(1 - int(self.spinbox_backg.get()) / 100)
-            # self.iterator_x = int(self.spinbox2.get())
-            # self.iterator_y = int(self.spinbox3.get())
             self.iterator_recoil = 1.0
-            # print(self.background_percent)
 
         else:
             values1 = self.iterator_recoil * 100
             values2 = self.iterator_x
             values3 = self.iterator_y
-
-    def get_values_radio(self):
-        self.first_click_bool = not (self.first_click_bool)
-
-        if self.first_click_bool:
-            bool_default = bool(self.bool_value.get())
-            self.spn_box_1.set("80")
-            self.spn_box_2.set("256")
-            self.spn_box_3.set("256")
-
-        else:
-            bool_default = False
-            self.bool_value.set(bool_default)
 
     def keyboard(self, event):
         self.key_pressed = event.char
@@ -501,14 +441,7 @@ class Interface(tk.Frame):
                 img[img[:, :, channel] == 255] = [0, 0, 255, self.slider_opacity]
 
             img = Image.fromarray(img)
-            for item in img.getdata():
-
-                if item[:3] == (0, 0, 0):
-                    image_new.append((0, 0, 0, 0))
-                else:
-                    image_new.append(item[:3] + (self.slider_opacity,))
-
-            img.putdata(image_new)
+            img = imp.color_to_transparency(self, img, self.slider_opacity)
             self.draw_img.paste(img, (0, 0), img)
 
         if self.super_pixel_bool:
@@ -627,52 +560,6 @@ class Interface(tk.Frame):
 
             self.buttons.next_btn.bind("<Button-1>", partial(self.button_click, key="1"))
             self.buttons.back_btn.bind("<Button-1>", partial(self.button_click, key="0"))
-
-        if self.ready_start:
-            self.remove_buttons("Start")
-
-            self.reference_binary = gdal.Open(self.shp_to_bin(self.name_reference_binary, self.name_tif), 1)
-            self.reference_neural = gdal.Open(self.shp_to_bin(self.name_reference_neural, self.name_tif), 1)
-
-            self.dst_img = gdal.GetDriverByName("GTiff").Create(
-                self.name_reference_binary + "_out.tif",
-                self.reference_binary.RasterXSize,
-                self.reference_binary.RasterYSize,
-                1,
-                gdal.GDT_Byte,
-                options=["COMPRESS=DEFLATE"],
-            )
-            self.dst_img.SetProjection(self.reference_binary.GetProjectionRef())
-            self.dst_img.SetGeoTransform(self.reference_binary.GetGeoTransform())
-            self.frame = tk.Frame(root, bd=2, relief=tk.SUNKEN)
-            self.frame.grid_rowconfigure(0, weight=1)
-            self.frame.grid_columnconfigure(0, weight=1)
-            xscroll = tk.Scrollbar(self.frame_over_center, orient=tk.HORIZONTAL)
-            yscroll = tk.Scrollbar(self.frame_over_center)
-
-            self.canvas = tk.Canvas(
-                self.frame,
-                bd=0,
-                width=self.screen_width,
-                height=self.screen_height,
-                xscrollcommand=xscroll.set,
-                yscrollcommand=yscroll.set,
-            )
-
-            self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-            self.frame.pack(expand=1)
-
-            self.next_icon = PhotoImage(file=r"../icons/next.png")
-            self.next_btn = tk.Button(root, image=self.next_icon)
-            self.next_btn.place(relx=0.926, rely=0.363, height=83, width=43)
-            self.next_btn.configure(borderwidth="2")
-            self.next_btn.bind("<Button-1>", partial(self.change_dir, key="1"))
-
-            self.back_icon = PhotoImage(file=r"../icons/back.png")
-            self.back_btn = tk.Button(root, image=self.back_icon)
-            self.back_btn.place(relx=0.031, rely=0.363, height=83, width=43)
-            self.back_btn.configure(borderwidth="2")
-            self.back_btn.bind("<Button-1>", partial(self.change_dir, key="0"))
 
     def run(self):
         self.labelling_start()
@@ -864,49 +751,25 @@ class Interface(tk.Frame):
                 self.segmentation[markers == i + 1] = self.color_map[i]
 
             self.bool_draw = True
-            # self.segmentation = cv2.resize(self.segmentation, (self.iterator_x, self.iterator_y))
-            # self.image_down[self.segmentation != 0] = 255
-
             self.segmentation = cv2.cvtColor(self.segmentation, cv2.COLOR_RGB2RGBA)
             self.segmentation = Image.fromarray(self.segmentation)
-            ##
-            image_new = []
-            for item in self.segmentation.getdata():
-                if item[:3] == (0, 0, 0):
-                    image_new.append((0, 0, 0, 0))
-                else:
-                    image_new.append(item[:3] + (self.slider_opacity,))
-
-            self.segmentation.putdata(image_new)
+            self.segmentation = imp.color_to_transparency(self, self.segmentation, self.slider_opacity)
 
             self.draw_img.paste(self.segmentation, (0, 0), self.segmentation)
             self.update_img(self.draw_img)
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
+
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
-            number_points = len(self.current_points)
-
-            if number_points > 2:
-                self.draw_line.polygon(
-                    (self.current_points),
-                    (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
-                    outline="red",
-                )
-
-            elif number_points == 2:
-                self.draw_line.line(
-                    (self.lasx, self.lasy, event.x, event.y),
-                    (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
-                    width=5,
-                    joint="curve",
-                )
-
-            Offset = (10) / 2
-            self.draw_line.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
-                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
+            self.draw_line = Draw().draw_polygon(
+                self.current_points,
+                self.draw_line,
+                self.color_line_rgb,
+                self.lasx,
+                self.lasy,
+                int(self.current_value_opacity.get()),
             )
             self.update_img(self.draw_img)
 
@@ -916,31 +779,29 @@ class Interface(tk.Frame):
     def draw_smth(self, event):
         self.lasx, self.lasy = event.x, event.y
         if self.pencil_draw_bool:
-            self.draw_line.line(
-                (self.old_x, self.old_y, self.lasx, self.lasy),
-                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
-                width=int(self.slider_pencil),
-                joint="curve",
-            )
-            Offset = (int(self.slider_pencil)) / 2
-            self.draw_line.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
-                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
+            self.draw_line = Draw().draw_countour(
+                self.draw_line,
+                self.color_line_rgb,
+                self.old_x,
+                self.old_y,
+                self.lasx,
+                self.lasy,
+                int(self.current_value_opacity.get()),
+                int(self.slider_pencil),
             )
             self.bool_draw = True
             self.update_img(self.draw_img)
 
         if self.super_pixel_bool:
-            self.lasx, self.lasy = event.x, event.y
-            self.draw_line.line(
-                ((self.old_x, self.old_y, self.lasx, self.lasy)),
-                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
-                width=int(self.slider_pencil),
-            )
-            Offset = (int(self.slider_pencil)) / 2
-            self.draw_line.ellipse(
-                (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
-                (self.color_line_rgb + (int(self.current_value_opacity.get()),)),
+            self.draw_line = Draw().draw_countour(
+                self.draw_line,
+                self.color_line_rgb,
+                self.old_x,
+                self.old_y,
+                self.lasx,
+                self.lasy,
+                int(self.current_value_opacity.get()),
+                int(self.slider_pencil),
             )
             self.update_img(self.draw_img)
 
@@ -949,9 +810,7 @@ class Interface(tk.Frame):
             )
 
             self.image_array_gray = np.array(self.draw_img_gray.copy(), dtype="float32")
-            ##self.image_array_gray = cv2.resize(self.image_array_gray, (self.iterator_x, self.iterator_y))
             self.image_array_gray = np.array(self.image_array_gray, dtype="int32")
-
             self.bool_draw = True
 
         elif not self.pencil_draw_bool and not self.polygon_draw_bool:
@@ -975,7 +834,6 @@ class Interface(tk.Frame):
         self.old_y = self.lasy
 
     def update_img(self, img):
-
         self.image = np.array(self.image_down)
         self.image = cv2.resize(self.image, (self.screen_width, self.screen_height))
         self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2RGBA)
@@ -1086,48 +944,6 @@ class Interface(tk.Frame):
 
         return name_shp + "_out.tif"
 
-    def generate_binary_tif(self):
-        mbox.showinfo("Information", "Gerando Resultados: Isso pode demorar um pouco: ")
-        iterator_x = 256
-        iterator_y = 256
-
-        for x in range(0, self.mosaico.RasterXSize, iterator_x):
-
-            for y in range(0, self.mosaico.RasterYSize, iterator_y):
-
-                if ((x + iterator_x) > self.mosaico.RasterXSize) or ((y + iterator_y) > self.mosaico.RasterYSize):
-                    continue
-
-                blueparcela = self.blue.ReadAsArray(x, y, iterator_x, iterator_y)
-                greenparcela = self.green.ReadAsArray(x, y, iterator_x, iterator_y)
-                redparcela = self.red.ReadAsArray(x, y, iterator_x, iterator_y)
-                self.imgparcela = cv2.merge((blueparcela, greenparcela, redparcela))
-                img = self.imgparcela / 255
-
-                pr = imp.predict_image(self, img)
-
-                if (self.imgparcela.max() > 0) and (self.imgparcela.min() < 255):
-                    write_image = pr
-
-                else:
-                    pr[pr >= 255] = 0
-                    write_image = pr
-
-                self.dst_img.GetRasterBand(1).WriteArray(write_image, xoff=x, yoff=y)
-                self.dst_img.self.dst_img.FlushCache()
-
-    def generate_shape(self):
-
-        src_band = self.dst_img.GetRasterBand(1)
-        dst_layername = "daninhas"
-        drv = ogr.GetDriverByName("ESRI Shapefile")
-        dst_ds = drv.CreateDataSource(str(self.out_file))
-        dst_layer = dst_ds.CreateLayer(dst_layername, srs=self.srs)
-
-        gdal.Polygonize(src_band, src_band, dst_layer, -1, [], callback=None)
-        dst_ds.Destroy()
-        mbox.showinfo("Information", "Shape Gerado com Sucesso!: ")
-
     def load_progress(self):
 
         try:
@@ -1158,7 +974,6 @@ class Interface(tk.Frame):
             string_text = str(self.x_crop) + "," + str(self.y_crop) + "," + str(self.name_tif) + ", \n"
             with open("log_progress.txt", "ab") as f:
                 f.write(string_text.encode("utf-8", "ignore"))
-
         root.destroy()
 
 

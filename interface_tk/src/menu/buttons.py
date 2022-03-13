@@ -4,13 +4,10 @@ from tkinter import Button, PhotoImage, messagebox as mbox
 from functools import partial
 
 
-class Buttons:
-    def __init__(self, root, tk_menu, frame):
+class ButtonSettingsLabelling:
+    def __init__(self, root, tk_menu):
         self.root = root
         self.tk_menu = tk_menu
-        self.frame = frame
-
-        self.color_buttons_center = "white"
 
     def settings_labelling_menu(self):
 
@@ -18,41 +15,25 @@ class Buttons:
         self.btn_load_mosaico.place(relx=0.72, rely=0.52, height=28, width=123)
         self.btn_load_mosaico.configure(takefocus="")
         self.btn_load_mosaico.configure(text="Mosaico")
-        self.btn_load_mosaico.bind("<Button-1>", partial(self.get_btn, key="0"))
-
-        self.label2 = self.tk_menu.Label(self.root)
-        self.label2.place(relx=0.11, rely=0.60, height=21, width=200)
-        self.label2.configure(activebackground="#f9f9f9")
-        self.label2.configure(text="Selecione o Shape de Base :")
 
         self.btn_shape_reference = self.tk_menu.Button(self.root)
         self.btn_shape_reference.place(relx=0.72, rely=0.60, height=28, width=123)
         self.btn_shape_reference.configure(takefocus="")
         self.btn_shape_reference.configure(text="Shape de Base")
-        self.btn_shape_reference.bind("<Button-1>", partial(self.get_btn, key="3"))
-
-        self.label3 = self.tk_menu.Label(self.root)
-        self.label3.place(relx=0.117, rely=0.68, height=21, width=260)
-        self.label3.configure(activebackground="#f9f9f9")
-        self.label3.configure(text="Porcentagem de fundo preto permitida:")
-
-        self.spinbox_backg = self.tk_menu.Spinbox(
-            self.root, from_=5.0, to=100.0, increment=5, textvariable=self.spn_box_1
-        )
-        self.spinbox_backg.place(relx=0.63, rely=0.69, relheight=0.046, relwidth=0.243)
-        self.spinbox_backg.configure(activebackground="#f9f9f9")
-        self.spinbox_backg.configure(background="white")
-        self.spinbox_backg.configure(font="TkDefaultFont")
-        self.spinbox_backg.configure(highlightbackground="black")
-        self.spinbox_backg.configure(selectbackground="blue")
-        self.spinbox_backg.configure(selectforeground="white")
-        self.spinbox_backg.configure(command=partial(self.get_values_spinbox, type="Efetuar Marcacoes em Ortomosaicos"))
 
         self.btn_start = self.tk_menu.Button(self.root)
         self.btn_start.place(relx=0.742, rely=0.871, height=48, width=123)
         self.btn_start.configure(takefocus="")
         self.btn_start.configure(text="Iniciar")
-        self.btn_start.bind("<Button-1>", partial(self.get_btn, key="5"))
+
+
+class ButtonsLabelling:
+    def __init__(self, root, tk_menu, frame):
+        self.root = root
+        self.tk_menu = tk_menu
+        self.frame = frame
+
+        self.color_buttons_center = "white"
 
     def button_start(self):
 

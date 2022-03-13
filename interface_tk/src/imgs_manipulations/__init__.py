@@ -1,1 +1,1 @@
-from .saturation import SatureImg
+from .imgs_manipulations import SatureImg, ImagesManipulations

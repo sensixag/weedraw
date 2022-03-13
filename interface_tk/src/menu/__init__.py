@@ -1,1 +1,1 @@
-from .buttons import Buttons
+from .buttons import ButtonSettingsLabelling, ButtonsLabelling
