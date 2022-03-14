@@ -2,60 +2,7 @@ from PIL import ImageTk
 from tkinter import Button, PhotoImage, messagebox as mbox
 
 from functools import partial
-
-
-class ButtonFactory:
-    def createButton(self, type_):
-        return buttonTypes[type_]()
-
-
-class ButtonBase:
-    relx = 0.0
-    rely = 0.0
-    height = 50
-    width = 50
-    background = "black"
-    text = "Test"
-
-    def getButtonConfig(self):
-        return (
-            self.relx,
-            self.rely,
-            self.height,
-            self.width,
-            self.background,
-            self.text,
-        )
-
-
-class ButtonLoadMosaic(ButtonBase):
-    relx = 0.72
-    rely = 0.52
-    height = 28
-    width = 123
-    background = "black"
-    text = "Mosaico"
-
-
-class ButtonShape(ButtonBase):
-    relx = 0.72
-    rely = 0.60
-    height = 28
-    width = 123
-    background = "black"
-    text = "Shape"
-
-
-class ButtonStart(ButtonBase):
-    relx = 0.742
-    rely = 0.871
-    height = 48
-    width = 123
-    background = "black"
-    text = "Iniciar"
-
-
-buttonTypes = [ButtonLoadMosaic, ButtonShape, ButtonStart]
+from factory import ButtonFactory, ButtonLoadMosaic, ButtonShape, ButtonStart
 
 
 class ButtonSettingsLabelling:
@@ -69,8 +16,9 @@ class ButtonSettingsLabelling:
         self.btn_start = self.tk_menu.Button(self.root)
         option_buttons = [self.btn_load_mosaico, self.btn_shape_reference, self.btn_start]
         factory = ButtonFactory()
+        button_settings_menu = [ButtonLoadMosaic, ButtonShape, ButtonStart]
 
-        for i in range(len(buttonTypes)):
+        for i in range(len(button_settings_menu)):
             relx = factory.createButton(i).getButtonConfig()[0]
             rely = factory.createButton(i).getButtonConfig()[1]
             height = factory.createButton(i).getButtonConfig()[2]
@@ -129,16 +77,3 @@ class ButtonsLabelling:
         self.back_btn = self.tk_menu.Button(self.root, image=self.back_icon)
         self.back_btn.place(relx=0.183, rely=0.43, height=70, width=43)
         self.back_btn.configure(borderwidth="2", background="white")
-
-
-class ButtonFactory:
-    def createButton(self, type_):
-        return buttonTypes[type_]()
-
-
-class ButtonBase:
-    relief = "flat"
-    foreground = "white"
-
-    def getButtonConfig(self):
-        return self.relief, self.foreground

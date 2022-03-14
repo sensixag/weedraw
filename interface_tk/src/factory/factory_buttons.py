@@ -1,6 +1,6 @@
 class ButtonFactory:
     def createButton(self, type_):
-        return buttonTypes[type_]()
+        return button_settings_menu[type_]()
 
 
 class ButtonBase:
@@ -49,4 +49,4 @@ class ButtonStart(ButtonBase):
     text = "Iniciar"
 
 
-buttonTypes = [ButtonLoadMosaic, ButtonShape, ButtonStart]
+button_settings_menu = [ButtonLoadMosaic, ButtonShape, ButtonStart]
