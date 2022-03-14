@@ -1,3 +1,6 @@
+from PIL import Image, ImageDraw
+
+
 class Draw:
     def draw_polygon(self, current_points, draw_line, color_line_rgb, position_x, position_y, transparency):
         number_points = len(current_points)
@@ -40,3 +43,26 @@ class Draw:
         )
 
         return draw_line
+
+    def reset_draw_screen(self, outline_rgb, outline_gray, screen_width, screen_height, option="ALL"):
+
+        if option == "CLEAN_JUST_OUTLINE_RGB":
+            outline_rgb = Image.new("RGBA", (screen_width, screen_height), (0, 0, 0, 0))
+            outline_rgb_line = ImageDraw.Draw(outline_rgb)
+
+            return outline_rgb, outline_rgb_line
+
+        if option == "CLEAN_JUST_OUTLINE_GRAY":
+            outline_gray = Image.new("L", (screen_width, screen_height))
+            outline_gray_line = ImageDraw.Draw(outline_gray)
+
+            return outline_gray, outline_gray_line
+
+        else:
+            outline_rgb = Image.new("RGBA", (screen_width, screen_height), (0, 0, 0, 0))
+            outline_rgb_line = ImageDraw.Draw(outline_rgb)
+
+            outline_gray = Image.new("L", (screen_width, screen_height))
+            outline_gray_line = ImageDraw.Draw(outline_gray)
+
+            return outline_rgb, outline_rgb_line, outline_gray, outline_gray_line

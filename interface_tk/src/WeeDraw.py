@@ -33,7 +33,7 @@ from osgeo import gdal, ogr, osr
 from callbacks_tk import Screen
 from menu import ButtonSettingsLabelling, ButtonsLabelling
 from neural import NeuralFunctions
-from imgs_manipulations import SatureImg
+from imgs_manipulations import SatureImg, GdalManipulations
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
 
@@ -390,21 +390,9 @@ class Interface(tk.Frame):
         self.set_slider_opacity.configure(text=self.get_current_value_opacity())
 
     def get_values_spinbox(self, type=""):
-
-        if type == "Efetuar Marcacoes por diretorios":
-            if self.first_click_bool == False:
-                self.iterator_recoil = float(int(self.spinbox1.get()) / 100)
-                self.iterator_x = int(self.spinbox2.get())
-                self.iterator_y = int(self.spinbox3.get())
-
-        elif type == "Efetuar Marcacoes em Ortomosaicos":
+        if type == "Efetuar Marcacoes em Ortomosaicos":
             self.background_percent = float(1 - int(self.spinbox_backg.get()) / 100)
             self.iterator_recoil = 1.0
-
-        else:
-            values1 = self.iterator_recoil * 100
-            values2 = self.iterator_x
-            values3 = self.iterator_y
 
     def keyboard(self, event):
         self.key_pressed = event.char
@@ -445,8 +433,13 @@ class Interface(tk.Frame):
             self.draw_img.paste(img, (0, 0), img)
 
         if self.super_pixel_bool:
-            self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
-            self.draw_line = ImageDraw.Draw(self.draw_img)
+            self.draw_img, self.draw_line = Draw().reset_draw_screen(
+                self.draw_img,
+                self.draw_img_gray,
+                self.screen_width,
+                self.screen_height,
+                option="CLEAN_JUST_OUTLINE_RGB",
+            )
 
         self.color_line_rgb = self.color_map[self.color_line]
         print(self.color_line)
@@ -507,7 +500,8 @@ class Interface(tk.Frame):
 
         elif self.name_tif != "" and self.name_reference_binary != "" and key == "5":
             # self.remove_buttons('Draw Menu')
-            self.reference_binary = self.shp_to_bin(self.name_reference_binary, self.name_tif)
+            print("5")
+            self.reference_binary = GdalManipulations.shp_to_bin(self, self.name_reference_binary, self.name_tif)
             self.remove_buttons("Fisrt Menu")
             self.labelling_start()
             self.remove_buttons("Draw Menu")
@@ -561,9 +555,6 @@ class Interface(tk.Frame):
             self.buttons.next_btn.bind("<Button-1>", partial(self.button_click, key="1"))
             self.buttons.back_btn.bind("<Button-1>", partial(self.button_click, key="0"))
 
-    def run(self):
-        self.labelling_start()
-
     def callback_opt(self, *args):
         if self.variable.get() == "Efetuar Marcacoes em Ortomosaicos":
             if not os.path.isdir(self.path_save_img_rgb):
@@ -587,134 +578,33 @@ class Interface(tk.Frame):
     def button_click(self, event=None, key=None):
         print("key :", key)
         if self.bool_draw:
-            self.current_value_saturation.set(0.0)
-
-            self.count_feature = 0
-            data_polygons = []
-
-            self.save_draw_array = np.asarray(self.draw_img)
-            self.save_draw_array = imp.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
-
-            if cv2.countNonZero(self.save_draw_array) == 0:
-                cv2.imwrite(
-                    self.path_save_img_negative + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                    self.imgparcela,
-                )
-            else:
-                cv2.imwrite(
-                    self.path_save_img_rgb + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                    self.imgparcela,
-                )
-                cv2.imwrite(
-                    self.path_save_img_bin + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                    self.save_draw_array,
-                )
-                self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
-                self.dst_img.FlushCache()
-
-                self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
-                self.draw_line = ImageDraw.Draw(self.draw_img)
-
-                self.draw_img_gray = PIL.Image.new("L", (self.screen_width, self.screen_height))
-                self.draw_line_gray = ImageDraw.Draw(self.draw_img_gray)
-
-            self.draw_lines_array = []
-            self.features_polygons = [[]]
+            self.save_draws()
 
         if key == "1":
-            if self.x_crop + self.iterator_x < self.mosaico.RasterXSize and self.x_crop + self.iterator_x > 0:
-                self.x_crop += self.iterator_x * self.iterator_recoil
-                # print('key 1 - if 0')
-
-                if self.x_crop + self.iterator_x > self.mosaico.RasterXSize:
-                    self.x_max = self.x_crop - self.iterator_x * self.iterator_recoil
-                    # print('entrou')
-
-            if self.x_crop + self.iterator_x > self.mosaico.RasterXSize:
-                self.x_crop = 0
-                self.y_crop += self.iterator_y * self.iterator_recoil
-                # print('key 1 - if 1')
-
-            if self.y_crop + self.iterator_y > self.mosaico.RasterYSize:
-                self.x_crop = self.x_crop
-                self.y_crop = self.y_crop
-                # print('key 1 - if 2')
-                mbox.showinfo("Information", "Todo o Mosaico foi Percorrido!")
-                self.destroy_aplication()
-
-            self.daninha_parcela = self.daninha_band_1.ReadAsArray(
-                self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
+            self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(
+                self.x_crop,
+                self.y_crop,
+                self.iterator_x,
+                self.iterator_y,
+                self.background_percent,
+                self.iterator_recoil,
+                self.mosaico,
+                self.daninha_band_1,
             )
-            while cv2.countNonZero(self.daninha_parcela) <= self.iterator_x * self.iterator_y * self.background_percent:
-                if self.x_crop + self.iterator_x < self.mosaico.RasterXSize and self.x_crop + self.iterator_x > 0:
-                    self.x_crop += self.iterator_x * self.iterator_recoil
-                    # print('key 1 - if 0')
-
-                    if self.x_crop + self.iterator_x > self.mosaico.RasterXSize:
-                        self.x_max = self.x_crop - self.iterator_x * self.iterator_recoil
-                        # print('entrou')
-
-                if self.x_crop + self.iterator_x > self.mosaico.RasterXSize:
-                    self.x_crop = 0
-                    self.y_crop += self.iterator_y * self.iterator_recoil
-
-                if self.y_crop + self.iterator_y > self.mosaico.RasterYSize:
-                    self.x_crop = self.x_crop
-                    self.y_crop = self.y_crop
-
-                    mbox.showinfo("Information", "Todo o Mosaico foi Percorrido!")
-                    self.destroy_aplication()
-                    break
-
-                self.daninha_parcela = self.daninha_band_1.ReadAsArray(
-                    self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
-                )
 
         elif key == "0":
-            if self.x_crop - self.iterator_x < self.mosaico.RasterXSize:
-                self.x_crop -= self.iterator_x * self.iterator_recoil
-                # print('key 0 - if 1')
-
-                if self.x_crop <= 0:
-                    self.x_crop = self.x_max
-                    self.y_crop -= self.iterator_y * self.iterator_recoil
-
-            if self.y_crop - self.iterator_y > self.mosaico.RasterYSize:
-                self.x_crop = 0
-                self.y_crop -= self.iterator_y * self.iterator_recoil
-
-            self.daninha_parcela = self.daninha_band_1.ReadAsArray(
-                self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
+            self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_back_img_in_mosaic(
+                self.x_crop,
+                self.y_crop,
+                self.iterator_x,
+                self.iterator_y,
+                self.background_percent,
+                self.iterator_recoil,
+                self.mosaico,
+                self.daninha_band_1,
             )
-            while cv2.countNonZero(self.daninha_parcela) <= self.iterator_x * self.iterator_y * self.background_percent:
-                if self.x_crop - self.iterator_x < self.mosaico.RasterXSize:
-                    self.x_crop -= self.iterator_x * self.iterator_recoil
 
-                    if self.x_crop <= 0:
-                        self.x_crop = self.x_max
-                        self.y_crop -= self.iterator_y * self.iterator_recoil
-
-                if self.y_crop - self.iterator_y > self.mosaico.RasterYSize:
-                    self.x_crop = 0
-                    self.y_crop -= self.iterator_y * self.iterator_recoil
-
-                self.daninha_parcela = self.daninha_band_1.ReadAsArray(
-                    self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
-                )
-
-        self.daninha_parcela = self.daninha_band_1.ReadAsArray(
-            self.x_crop, self.y_crop, self.iterator_x, self.iterator_y
-        )
-        # self.percent_txt["text"] = (
-        #    "Progress : "
-        #    + str(self.percent_progress(self.x_crop, self.y_crop, self.mosaico.RasterXSize, self.mosaico.RasterYSize))
-        #    + "%"
-        # )
-        blueparcela = self.blue.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
-        greenparcela = self.green.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
-        redparcela = self.red.ReadAsArray(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y)
-        self.imgparcela = cv2.merge((redparcela, greenparcela, blueparcela))
-        self.imgparcela[self.daninha_parcela == 0] = 0
+        self.imgparcela = GdalManipulations().get_image_rgb_by_band(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1)
         self.image_down = self.imgparcela.copy()
         self.segmentation = np.zeros_like(self.image_down)
 
@@ -722,9 +612,7 @@ class Interface(tk.Frame):
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
         self.image_tk = ImageTk.PhotoImage(self.img_array_tk)
         self.first_click = True
-        self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
         self.update_img(self.img_array_tk)
-        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
         self.canvas.bind("<Button-1>", self.get_x_and_y)
         self.canvas.bind("<Button 3>", self.get_right_click)
@@ -849,9 +737,9 @@ class Interface(tk.Frame):
         if path_rgb_shp.endswith("tif"):
 
             self.mosaico = gdal.Open(path_rgb_shp)
-            self.red = self.mosaico.GetRasterBand(1)
-            self.green = self.mosaico.GetRasterBand(2)
-            self.blue = self.mosaico.GetRasterBand(3)
+            self.band_1 = self.mosaico.GetRasterBand(1)
+            self.band_2 = self.mosaico.GetRasterBand(2)
+            self.band_3 = self.mosaico.GetRasterBand(3)
             self.alpha = self.mosaico.GetRasterBand(4)
 
             self.nx = self.mosaico.RasterXSize
@@ -916,34 +804,6 @@ class Interface(tk.Frame):
 
             return path_reference_tif, path_reference_shp, path_neural_shp
 
-    def shp_to_bin(self, name_shp, name_tif, burn=255):
-
-        base_img = gdal.Open(name_tif, gdal.GA_ReadOnly)
-        base_shp = ogr.Open(name_shp)
-        base_shp_layer = base_shp.GetLayer()
-
-        # output_name = name_shp + '_out.tif
-        output = gdal.GetDriverByName("GTiff").Create(
-            name_shp + "_out.tif",
-            base_img.RasterXSize,
-            base_img.RasterYSize,
-            1,
-            gdal.GDT_Byte,
-            options=["COMPRESS=DEFLATE"],
-        )
-        output.SetProjection(base_img.GetProjectionRef())
-        output.SetGeoTransform(base_img.GetGeoTransform())
-
-        Band = output.GetRasterBand(1)
-        raster = gdal.RasterizeLayer(output, [1], base_shp_layer, burn_values=[burn])
-
-        Band = None
-        output = None
-        base_img = None
-        base_shp = None
-
-        return name_shp + "_out.tif"
-
     def load_progress(self):
 
         try:
@@ -976,6 +836,32 @@ class Interface(tk.Frame):
                 f.write(string_text.encode("utf-8", "ignore"))
         root.destroy()
 
+    def save_draws(self):
+        self.current_value_saturation.set(0.0)
+        self.count_feature = 0
+        self.save_draw_array = np.asarray(self.draw_img)
+        self.save_draw_array = imp.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
+
+        if cv2.countNonZero(self.save_draw_array) == 0:
+            cv2.imwrite(
+                self.path_save_img_negative + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
+                self.imgparcela,
+            )
+        else:
+            cv2.imwrite(
+                self.path_save_img_rgb + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
+                self.imgparcela,
+            )
+            cv2.imwrite(
+                self.path_save_img_bin + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
+                self.save_draw_array,
+            )
+            self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
+            self.dst_img.FlushCache()
+
+            self.draw_img, self.draw_line, self.draw_img_gray, self.draw_line_gray = Draw().reset_draw_screen(
+                self.draw_img, self.draw_img_gray, self.screen_width, self.screen_height
+            )
 
 if __name__ == "__main__":
 
