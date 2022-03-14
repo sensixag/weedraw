@@ -4,27 +4,80 @@ from tkinter import Button, PhotoImage, messagebox as mbox
 from functools import partial
 
 
+class ButtonFactory:
+    def createButton(self, type_):
+        return buttonTypes[type_]()
+
+
+class ButtonBase:
+    relx = 0.0
+    rely = 0.0
+    height = 50
+    width = 50
+    background = "black"
+    text = "Test"
+
+    def getButtonConfig(self):
+        return (
+            self.relx,
+            self.rely,
+            self.height,
+            self.width,
+            self.background,
+            self.text,
+        )
+
+
+class ButtonLoadMosaic(ButtonBase):
+    relx = 0.72
+    rely = 0.52
+    height = 28
+    width = 123
+    background = "black"
+    text = "Mosaico"
+
+
+class ButtonShape(ButtonBase):
+    relx = 0.72
+    rely = 0.60
+    height = 28
+    width = 123
+    background = "black"
+    text = "Shape"
+
+
+class ButtonStart(ButtonBase):
+    relx = 0.742
+    rely = 0.871
+    height = 48
+    width = 123
+    background = "black"
+    text = "Iniciar"
+
+
+buttonTypes = [ButtonLoadMosaic, ButtonShape, ButtonStart]
+
+
 class ButtonSettingsLabelling:
     def __init__(self, root, tk_menu):
         self.root = root
         self.tk_menu = tk_menu
 
     def settings_labelling_menu(self):
-
         self.btn_load_mosaico = self.tk_menu.Button(self.root)
-        self.btn_load_mosaico.place(relx=0.72, rely=0.52, height=28, width=123)
-        self.btn_load_mosaico.configure(takefocus="")
-        self.btn_load_mosaico.configure(text="Mosaico")
-
         self.btn_shape_reference = self.tk_menu.Button(self.root)
-        self.btn_shape_reference.place(relx=0.72, rely=0.60, height=28, width=123)
-        self.btn_shape_reference.configure(takefocus="")
-        self.btn_shape_reference.configure(text="Shape de Base")
-
         self.btn_start = self.tk_menu.Button(self.root)
-        self.btn_start.place(relx=0.742, rely=0.871, height=48, width=123)
-        self.btn_start.configure(takefocus="")
-        self.btn_start.configure(text="Iniciar")
+        option_buttons = [self.btn_load_mosaico, self.btn_shape_reference, self.btn_start]
+        factory = ButtonFactory()
+
+        for i in range(len(buttonTypes)):
+            relx = factory.createButton(i).getButtonConfig()[0]
+            rely = factory.createButton(i).getButtonConfig()[1]
+            height = factory.createButton(i).getButtonConfig()[2]
+            width = factory.createButton(i).getButtonConfig()[3]
+            text = factory.createButton(i).getButtonConfig()[5]
+            option_buttons[i].place(relx=relx, rely=rely, height=height, width=width)
+            option_buttons[i].configure(text=text)
 
 
 class ButtonsLabelling:
@@ -76,3 +129,16 @@ class ButtonsLabelling:
         self.back_btn = self.tk_menu.Button(self.root, image=self.back_icon)
         self.back_btn.place(relx=0.183, rely=0.43, height=70, width=43)
         self.back_btn.configure(borderwidth="2", background="white")
+
+
+class ButtonFactory:
+    def createButton(self, type_):
+        return buttonTypes[type_]()
+
+
+class ButtonBase:
+    relief = "flat"
+    foreground = "white"
+
+    def getButtonConfig(self):
+        return self.relief, self.foreground
