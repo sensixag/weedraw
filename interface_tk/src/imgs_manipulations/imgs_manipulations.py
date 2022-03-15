@@ -41,9 +41,9 @@ class Watershed:
 
         return segmentation
 
+
 class ImagesManipulations:
     def find_contourns(self, img):
-
         # dots            = cv2.GaussianBlur(img, (21, 21), 0)
         # dots_cpy       = cv2.erode(dots, (3, 3))
         # dots_cpy        = cv2.dilate(img, None, iterations=4)
@@ -56,6 +56,18 @@ class ImagesManipulations:
             self.y_ctn = int(sum(c[:, 0, 1]) / len(c))
 
         return contours
+
+    def image_to_tk_screen(self, img, screen_width, screen_height, transparency):
+        img = cv2.resize(img, (screen_width, screen_height))
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGBA)
+
+        image_new = []
+        for channel in range(img.shape[-1] - 1):
+            img[img[:, :, channel] == 255] = [0, 0, 255, transparency]
+
+        img = Image.fromarray(img)
+
+        return img
 
     def color_to_transparency(self, img, color=(0, 0, 0), transparency=128):
         image_new = []

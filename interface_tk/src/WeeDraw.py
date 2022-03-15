@@ -418,17 +418,11 @@ class Interface(tk.Frame):
                 self.path_neural_network = filedialog.askopenfilename(title="Selecione os pesos da rede neural :")
                 self.neural_network = NeuralFunctions(self.path_neural_network)
                 img = self.neural_network.predict_image(self.imgparcela)
+                self.bool_draw = True
             else:
                 img = self.neural_network.predict_image(self.imgparcela)
 
-            img = cv2.resize(img, (self.screen_width, self.screen_height))
-            img = imp.gray_to_rgba(self, img)
-
-            image_new = []
-            for channel in range(img.shape[-1] - 1):
-                img[img[:, :, channel] == 255] = [0, 0, 255, self.slider_opacity]
-
-            img = Image.fromarray(img)
+            img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
             img = imp.color_to_transparency(self, img, self.slider_opacity)
             self.draw_img.paste(img, (0, 0), img)
 
@@ -608,6 +602,13 @@ class Interface(tk.Frame):
             self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1
         )
         self.image_down = self.imgparcela.copy()
+        if self.use_neural_network:
+            img = self.neural_network.predict_image(self.imgparcela)
+            img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
+            img = imp.color_to_transparency(self, img, self.slider_opacity)
+            self.draw_img.paste(img, (0, 0), img)
+            self.update_img(self.draw_img)
+            
         self.segmentation = np.zeros_like(self.image_down)
 
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
