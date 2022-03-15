@@ -604,11 +604,12 @@ class Interface(tk.Frame):
         self.image_down = self.imgparcela.copy()
         if self.use_neural_network:
             img = self.neural_network.predict_image(self.imgparcela)
-            img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
-            img = imp.color_to_transparency(self, img, self.slider_opacity)
-            self.draw_img.paste(img, (0, 0), img)
+            contourns = imp.find_contourns(self, img)
+            # img = imp.color_to_transparency(self, img, self.slider_opacity)
+            img = cv2.drawContours(self.image_down, contourns, -1, (255, 0, 0), 1)
+            # self.draw_img.paste(img, (0, 0), img)
             self.update_img(self.draw_img)
-            
+
         self.segmentation = np.zeros_like(self.image_down)
 
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
