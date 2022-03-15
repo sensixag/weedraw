@@ -1,7 +1,6 @@
 from PIL import ImageTk
-from tkinter import Button, PhotoImage, messagebox as mbox
+from tkinter import PhotoImage, messagebox as mbox
 
-from functools import partial
 from factory import ButtonFactory, ButtonLoadMosaic, ButtonShape, ButtonStart
 
 

@@ -1,4 +1,6 @@
 import cv2
+from PIL import Image
+import numpy as np
 
 
 class SatureImg:
@@ -21,6 +23,23 @@ class SatureImg:
 
         return image_saturated
 
+
+class Watershed:
+    def watershed(self, image_rgb, img_markers, color_map, screen_width, screen_height):
+        image_for_watershed = image_rgb.copy()
+        image_for_watershed = cv2.resize(image_for_watershed, (screen_width, screen_height))
+        segmentation = np.zeros_like(image_for_watershed)
+
+        markers = cv2.watershed(image_for_watershed.copy(), img_markers.copy())
+
+        for i in range(len(color_map)):
+            segmentation[markers == i + 1] = color_map[i]
+
+        bool_draw = True
+        segmentation = cv2.cvtColor(segmentation, cv2.COLOR_RGB2RGBA)
+        segmentation = Image.fromarray(segmentation)
+
+        return segmentation
 
 class ImagesManipulations:
     def find_contourns(self, img):

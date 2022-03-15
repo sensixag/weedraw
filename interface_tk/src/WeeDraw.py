@@ -33,7 +33,7 @@ from osgeo import gdal, ogr, osr
 from callbacks_tk import Screen
 from menu import ButtonSettingsLabelling, ButtonsLabelling
 from neural import NeuralFunctions
-from imgs_manipulations import SatureImg, GdalManipulations
+from imgs_manipulations import SatureImg, GdalManipulations, Watershed
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
 
@@ -604,7 +604,9 @@ class Interface(tk.Frame):
                 self.daninha_band_1,
             )
 
-        self.imgparcela = GdalManipulations().get_image_rgb_by_band(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1)
+        self.imgparcela = GdalManipulations().get_image_rgb_by_band(
+            self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1
+        )
         self.image_down = self.imgparcela.copy()
         self.segmentation = np.zeros_like(self.image_down)
 
@@ -628,21 +630,11 @@ class Interface(tk.Frame):
 
     def mouse_release(self, event):
         if self.super_pixel_bool:
-            self.image_for_watershed = self.imgparcela.copy()
 
-            self.image_for_watershed = cv2.resize(self.image_for_watershed, (self.screen_width, self.screen_height))
-            self.segmentation = np.zeros_like(self.image_for_watershed)
-
-            markers = cv2.watershed(self.image_for_watershed.copy(), self.image_array_gray.copy())
-
-            for i in range(self.color_map.__len__()):
-                self.segmentation[markers == i + 1] = self.color_map[i]
-
-            self.bool_draw = True
-            self.segmentation = cv2.cvtColor(self.segmentation, cv2.COLOR_RGB2RGBA)
-            self.segmentation = Image.fromarray(self.segmentation)
-            self.segmentation = imp.color_to_transparency(self, self.segmentation, self.slider_opacity)
-
+            self.segmentation = Watershed().watershed(
+                self.imgparcela, self.image_array_gray, self.color_map, self.screen_width, self.screen_height
+            )
+            self.segmentation = imp.color_to_transparency(self.image_array_gray, self.segmentation, self.slider_opacity)
             self.draw_img.paste(self.segmentation, (0, 0), self.segmentation)
             self.update_img(self.draw_img)
 
@@ -862,6 +854,7 @@ class Interface(tk.Frame):
             self.draw_img, self.draw_line, self.draw_img_gray, self.draw_line_gray = Draw().reset_draw_screen(
                 self.draw_img, self.draw_img_gray, self.screen_width, self.screen_height
             )
+
 
 if __name__ == "__main__":
 
