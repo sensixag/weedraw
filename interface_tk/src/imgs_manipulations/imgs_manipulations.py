@@ -43,11 +43,12 @@ class Watershed:
 
 
 class ImagesManipulations:
-    def find_contourns(self, img):
+    def find_contourns(self, img, screen_width, screen_height):
         # dots            = cv2.GaussianBlur(img, (21, 21), 0)
         # dots_cpy       = cv2.erode(dots, (3, 3))
         # dots_cpy        = cv2.dilate(img, None, iterations=4)
         # filter          = cv2.threshold(dots_cpy, 128, 255, cv2.THRESH_BINARY)[1]
+        img = cv2.resize(img, (screen_width, screen_height))
         contours, hier = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         print(len(contours))
 
@@ -60,11 +61,6 @@ class ImagesManipulations:
     def image_to_tk_screen(self, img, screen_width, screen_height, transparency):
         img = cv2.resize(img, (screen_width, screen_height))
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGBA)
-
-        image_new = []
-        for channel in range(img.shape[-1] - 1):
-            img[img[:, :, channel] == 255] = [0, 0, 255, transparency]
-
         img = Image.fromarray(img)
 
         return img
@@ -75,7 +71,7 @@ class ImagesManipulations:
             if item[:3] == (0, 0, 0):
                 image_new.append((0, 0, 0, 0))
             else:
-                image_new.append(item[:3] + (transparency,))
+                image_new.append(color + (transparency,))
 
         img.putdata(image_new)
 

@@ -69,6 +69,7 @@ class Interface(tk.Frame):
         self.vertices_ids_array = []
 
         self.save_draw_array = None
+        self.option_of_draw = "CNT"
         self.name_tif = ""
         self.name_reference_binary = ""
         self.name_reference_neural = ""
@@ -113,6 +114,8 @@ class Interface(tk.Frame):
         self.btn_int = tk.IntVar()
 
         self.var = tk.IntVar()
+        self.check_neural = tk.IntVar()
+
         self.old_choose = ""
         self.OptionList = ["Efetuar Marcacoes em Ortomosaicos", "Efetuar Marcacoes por diretorios"]
 
@@ -309,6 +312,10 @@ class Interface(tk.Frame):
         self.buttons.btn_load_mosaico.bind("<Button-1>", partial(self.get_btn, key="0"))
         self.buttons.btn_shape_reference.bind("<Button-1>", partial(self.get_btn, key="3"))
         self.buttons.btn_start.bind("<Button-1>", partial(self.get_btn, key="5"))
+        self.button_check_nn = tk.Checkbutton(
+            root, text="Utilizar Rede Neural", variable=self.use_neural_network, command=self.use_nn
+        )
+        self.button_check_nn.place(x=85, y=450)
 
     def first_menu(self, app):
 
@@ -411,6 +418,9 @@ class Interface(tk.Frame):
         if self.key_pressed == "p":
             self.color_line = 0
             print("p")
+
+        if self.key_pressed == "x":
+            cv2.fillPoly(self.image_down, pts=self.contours, color=(0, 255, 0))
 
         if self.key_pressed == "n":
             if not self.use_neural_network:
@@ -602,12 +612,21 @@ class Interface(tk.Frame):
             self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1
         )
         self.image_down = self.imgparcela.copy()
+        self.image_down = cv2.resize(self.image_down, (self.screen_width, self.screen_height))
         if self.use_neural_network:
+
             img = self.neural_network.predict_image(self.imgparcela)
-            contourns = imp.find_contourns(self, img)
-            # img = imp.color_to_transparency(self, img, self.slider_opacity)
-            img = cv2.drawContours(self.image_down, contourns, -1, (255, 0, 0), 1)
-            # self.draw_img.paste(img, (0, 0), img)
+            if self.option_of_draw == "CNT":
+                self.contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
+                cv2.drawContours(self.image_down, self.contours, -1, (255, 0, 0), 1)
+            else:
+                img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
+                img = imp.color_to_transparency(
+                    self, img=img, color=self.color_line_rgb, transparency=self.slider_opacity
+                )
+                self.draw_img.paste(img, (0, 0), img)
+            # img = Image.fromarray(img)
+
             self.update_img(self.draw_img)
 
         self.segmentation = np.zeros_like(self.image_down)
@@ -629,6 +648,11 @@ class Interface(tk.Frame):
     def get_right_click(self, event):
         self.current_points.clear()
         self.count_feature += 1
+
+    def use_nn(self):
+        self.use_neural_network = True
+        self.path_neural_network = "archives/vgg16_Linknet_3.hdf5"
+        self.neural_network = NeuralFunctions(self.path_neural_network)
 
     def mouse_release(self, event):
         if self.super_pixel_bool:
@@ -655,6 +679,34 @@ class Interface(tk.Frame):
             )
             self.update_img(self.draw_img)
 
+        if self.use_neural_network and self.option_of_draw == "CNT":
+            self.ctn = []
+            mask = np.zeros(self.image_down.shape[:2], dtype=self.image_down.dtype)
+            if self.first_click == True:
+
+                for i in range(0, len(self.contours)):
+                    self.cnt_validator.append(False)
+                    # self.img_fit = cv2.fillPoly(self.image_down, pts=self.contours, color=(0, 0, 0))
+
+                # print("False")
+                self.first_click = False
+
+            for i in range(0, len(self.cnt_validator)):
+                r = cv2.pointPolygonTest(self.contours[i], (self.lasx, self.lasy), False)
+                print(r)
+                if r > 0:
+                    self.cnt_validator[i] = not self.cnt_validator[i]
+                    print("Selected contour ", i)
+                    self.ctn = self.contours[i]
+
+                    if self.cnt_validator[i] == True:
+                        self.draw = cv2.drawContours(self.image_down, self.ctn, -1, (0, 255, 0), 3)
+                        cv2.fillPoly(self.image_down, pts=[self.ctn[i]], color=(0, 255, 0))
+                        # self.dst_img.GetRasterBand(1).WriteArray(union_ref_checker, xoff=self.x_crop, yoff=self.y_crop)
+                    else:
+                        self.draw = cv2.drawContours(self.image_down, self.ctn, -1, (255, 0, 0), 3)
+
+            self.update_img(self.draw_img)
         self.old_x = self.lasx
         self.old_y = self.lasy
 
