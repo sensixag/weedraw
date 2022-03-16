@@ -66,3 +66,14 @@ class Draw:
             outline_gray_line = ImageDraw.Draw(outline_gray)
 
             return outline_rgb, outline_rgb_line, outline_gray, outline_gray_line
+
+    def create_screen_to_draw(self, screen_width, screen_height, type="RGBA"):
+        if type == "L":
+            outline_screen = Image.new(type, (screen_width, screen_height))
+
+        else:
+            outline_screen = Image.new(type, (screen_width, screen_height), (0, 0, 0, 0))
+
+        draw_screen = ImageDraw.Draw(outline_screen)
+
+        return outline_screen, draw_screen

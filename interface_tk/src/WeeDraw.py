@@ -63,7 +63,7 @@ class Interface(tk.Frame):
         self.array_clicks = []
         self.current_points = []
         self.current_points_bkp = []
-        self.draw_lines_array = [[]]
+        self.draws_array = [[]]
         self.features_polygons = [[]]
         self.polygons_ids_array = []
         self.vertices_ids_array = []
@@ -375,7 +375,7 @@ class Interface(tk.Frame):
             if self.slider_saturation <= 10:
                 self.image_down = self.imgparcela.copy()
 
-            self.update_img(self.draw_img)
+            self.update_img(self.screen_main)
         self.slider_saturation_old = self.slider_saturation
 
     def slider_changed_saturation(self, event):
@@ -420,26 +420,12 @@ class Interface(tk.Frame):
             print("p")
 
         if self.key_pressed == "x":
-            cv2.fillPoly(self.image_down, pts=self.contours, color=(0, 255, 0))
-
-        if self.key_pressed == "n":
-            if not self.use_neural_network:
-                self.use_neural_network = True
-                self.path_neural_network = filedialog.askopenfilename(title="Selecione os pesos da rede neural :")
-                self.neural_network = NeuralFunctions(self.path_neural_network)
-                img = self.neural_network.predict_image(self.imgparcela)
-                self.bool_draw = True
-            else:
-                img = self.neural_network.predict_image(self.imgparcela)
-
-            img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
-            img = imp.color_to_transparency(self, img, self.slider_opacity)
-            self.draw_img.paste(img, (0, 0), img)
+            cv2.fillPoly(self.image_down, pts=self.contours, color=(255, 0, 0, self.slider_opacity))
 
         if self.super_pixel_bool:
-            self.draw_img, self.draw_line = Draw().reset_draw_screen(
-                self.draw_img,
-                self.draw_img_gray,
+            self.screen_main, self.draw = Draw().reset_draw_screen(
+                self.screen_main,
+                self.screen_watershed,
                 self.screen_width,
                 self.screen_height,
                 option="CLEAN_JUST_OUTLINE_RGB",
@@ -548,11 +534,10 @@ class Interface(tk.Frame):
             self.daninha_1 = gdal.Open(self.reference_binary)
             self.daninha_band_1 = self.daninha_1.GetRasterBand(1)
 
-            self.draw_img = PIL.Image.new("RGBA", (self.screen_width, self.screen_height), (0, 0, 0, 0))
-            self.draw_line = ImageDraw.Draw(self.draw_img)
-
-            self.draw_img_gray = PIL.Image.new("L", (self.screen_width, self.screen_height))
-            self.draw_line_gray = ImageDraw.Draw(self.draw_img_gray)
+            self.screen_main, self.draw = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
+            self.screen_watershed, self.draw_watershed = Draw().create_screen_to_draw(
+                self.screen_width, self.screen_height, "L"
+            )
 
             self.cnt_validator = []
 
@@ -614,20 +599,23 @@ class Interface(tk.Frame):
         self.image_down = self.imgparcela.copy()
         self.image_down = cv2.resize(self.image_down, (self.screen_width, self.screen_height))
         if self.use_neural_network:
-
+            self.array_screen_neural = np.array(self.screen_neural)
             img = self.neural_network.predict_image(self.imgparcela)
             if self.option_of_draw == "CNT":
                 self.contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
-                cv2.drawContours(self.image_down, self.contours, -1, (255, 0, 0), 1)
+                cv2.drawContours(self.array_screen_neural, self.contours, -1, (255, 0, 0, 255), 1)
+                self.screen_neural = Image.fromarray(self.array_screen_neural)
+                self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+
             else:
                 img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
                 img = imp.color_to_transparency(
                     self, img=img, color=self.color_line_rgb, transparency=self.slider_opacity
                 )
-                self.draw_img.paste(img, (0, 0), img)
+                self.screen_main.paste(img, (0, 0), img)
             # img = Image.fromarray(img)
 
-            self.update_img(self.draw_img)
+            self.update_img(self.screen_main)
 
         self.segmentation = np.zeros_like(self.image_down)
 
@@ -653,6 +641,7 @@ class Interface(tk.Frame):
         self.use_neural_network = True
         self.path_neural_network = "archives/vgg16_Linknet_3.hdf5"
         self.neural_network = NeuralFunctions(self.path_neural_network)
+        self.screen_neural, _ = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
 
     def mouse_release(self, event):
         if self.super_pixel_bool:
@@ -661,29 +650,28 @@ class Interface(tk.Frame):
                 self.imgparcela, self.image_array_gray, self.color_map, self.screen_width, self.screen_height
             )
             self.segmentation = imp.color_to_transparency(self.image_array_gray, self.segmentation, self.slider_opacity)
-            self.draw_img.paste(self.segmentation, (0, 0), self.segmentation)
-            self.update_img(self.draw_img)
+            self.screen_main.paste(self.segmentation, (0, 0), self.segmentation)
+            self.update_img(self.screen_main)
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
 
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
-            self.draw_line = Draw().draw_polygon(
+            self.draw = Draw().draw_polygon(
                 self.current_points,
-                self.draw_line,
+                self.draw,
                 self.color_line_rgb,
                 self.lasx,
                 self.lasy,
                 int(self.current_value_opacity.get()),
             )
-            self.update_img(self.draw_img)
+            self.update_img(self.screen_main)
 
         if self.use_neural_network and self.option_of_draw == "CNT":
             self.ctn = []
-            mask = np.zeros(self.image_down.shape[:2], dtype=self.image_down.dtype)
             if self.first_click == True:
-
+                self.array_screen_neural = np.array(self.screen_neural)
                 for i in range(0, len(self.contours)):
                     self.cnt_validator.append(False)
                     # self.img_fit = cv2.fillPoly(self.image_down, pts=self.contours, color=(0, 0, 0))
@@ -700,21 +688,24 @@ class Interface(tk.Frame):
                     self.ctn = self.contours[i]
 
                     if self.cnt_validator[i] == True:
-                        self.draw = cv2.drawContours(self.image_down, self.ctn, -1, (0, 255, 0), 3)
-                        cv2.fillPoly(self.image_down, pts=[self.ctn[i]], color=(0, 255, 0))
-                        # self.dst_img.GetRasterBand(1).WriteArray(union_ref_checker, xoff=self.x_crop, yoff=self.y_crop)
-                    else:
-                        self.draw = cv2.drawContours(self.image_down, self.ctn, -1, (255, 0, 0), 3)
+                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (255, 0, 0, 255), 3)
+                        cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(255, 0, 0, 255))
 
-            self.update_img(self.draw_img)
+                    else:
+                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (0, 0, 0, 255), 3)
+                        cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(0, 0, 0, 255))
+
+                    self.screen_neural = Image.fromarray(self.array_screen_neural)
+                    self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+            self.update_img(self.screen_main)
         self.old_x = self.lasx
         self.old_y = self.lasy
 
     def draw_smth(self, event):
         self.lasx, self.lasy = event.x, event.y
         if self.pencil_draw_bool:
-            self.draw_line = Draw().draw_countour(
-                self.draw_line,
+            self.draw = Draw().draw_countour(
+                self.draw,
                 self.color_line_rgb,
                 self.old_x,
                 self.old_y,
@@ -724,11 +715,11 @@ class Interface(tk.Frame):
                 int(self.slider_pencil),
             )
             self.bool_draw = True
-            self.update_img(self.draw_img)
+            self.update_img(self.screen_main)
 
         if self.super_pixel_bool:
-            self.draw_line = Draw().draw_countour(
-                self.draw_line,
+            self.draw = Draw().draw_countour(
+                self.draw,
                 self.color_line_rgb,
                 self.old_x,
                 self.old_y,
@@ -737,32 +728,32 @@ class Interface(tk.Frame):
                 int(self.current_value_opacity.get()),
                 int(self.slider_pencil),
             )
-            self.update_img(self.draw_img)
+            self.update_img(self.screen_main)
 
-            self.draw_line_gray.line(
+            self.draw_watershed.line(
                 ((self.old_x, self.old_y, self.lasx, self.lasy)), self.color_line, width=int(self.slider_pencil)
             )
 
-            self.image_array_gray = np.array(self.draw_img_gray.copy(), dtype="float32")
+            self.image_array_gray = np.array(self.screen_watershed.copy(), dtype="float32")
             self.image_array_gray = np.array(self.image_array_gray, dtype="int32")
             self.bool_draw = True
 
         elif not self.pencil_draw_bool and not self.polygon_draw_bool:
             self.lasx, self.lasy = event.x, event.y
 
-            self.draw_line.line(
+            self.draw.line(
                 (self.old_x, self.old_y, self.lasx, self.lasy),
                 (0, 0, 0, 0),
                 width=int(self.slider_pencil / 2),
                 joint="curve",
             )
             Offset = int(self.slider_pencil / 2)
-            self.draw_line.ellipse(
+            self.draw.ellipse(
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
                 (0, 0, 0, 0),
             )
             self.bool_draw = True
-            self.update_img(self.draw_img)
+            self.update_img(self.screen_main)
 
         self.old_x = self.lasx
         self.old_y = self.lasy
@@ -773,7 +764,7 @@ class Interface(tk.Frame):
         self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2RGBA)
         self.image = PIL.Image.fromarray(self.image.copy())
 
-        self.image.paste(self.draw_img, (0, 0), self.draw_img)
+        self.image.paste(self.screen_main, (0, 0), self.screen_main)
         self.image_final = ImageTk.PhotoImage(self.image)
         self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
 
@@ -885,7 +876,7 @@ class Interface(tk.Frame):
     def save_draws(self):
         self.current_value_saturation.set(0.0)
         self.count_feature = 0
-        self.save_draw_array = np.asarray(self.draw_img)
+        self.save_draw_array = np.asarray(self.screen_main)
         self.save_draw_array = imp.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
 
         if cv2.countNonZero(self.save_draw_array) == 0:
@@ -905,8 +896,16 @@ class Interface(tk.Frame):
             self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
             self.dst_img.FlushCache()
 
-            self.draw_img, self.draw_line, self.draw_img_gray, self.draw_line_gray = Draw().reset_draw_screen(
-                self.draw_img, self.draw_img_gray, self.screen_width, self.screen_height
+            self.screen_main, self.draw, self.screen_watershed, self.draw_watershed = Draw().reset_draw_screen(
+                self.screen_main, self.screen_watershed, self.screen_width, self.screen_height
+            )
+
+            self.screen_neural, _, = Draw().reset_draw_screen(
+                self.screen_main,
+                self.screen_watershed,
+                self.screen_width,
+                self.screen_height,
+                option="CLEAN_JUST_OUTLINE_RGB",
             )
 
 
