@@ -56,7 +56,6 @@ class Interface(tk.Frame):
         self.screen_height = 700
 
         self.count_img = 0
-        self.count_feature = 0
         self.iterator_recoil = 1.0
         self.cnt_validator = []
         self.background_percent = 0.8
@@ -635,7 +634,6 @@ class Interface(tk.Frame):
 
     def get_right_click(self, event):
         self.current_points.clear()
-        self.count_feature += 1
 
     def use_nn(self):
         self.use_neural_network = True
@@ -674,7 +672,6 @@ class Interface(tk.Frame):
                 self.array_screen_neural = np.array(self.screen_neural)
                 for i in range(0, len(self.contours)):
                     self.cnt_validator.append(False)
-                    # self.img_fit = cv2.fillPoly(self.image_down, pts=self.contours, color=(0, 0, 0))
 
                 # print("False")
                 self.first_click = False
@@ -697,7 +694,10 @@ class Interface(tk.Frame):
 
                     self.screen_neural = Image.fromarray(self.array_screen_neural)
                     self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+
+            self.bool_draw = True
             self.update_img(self.screen_main)
+
         self.old_x = self.lasx
         self.old_y = self.lasy
 
@@ -874,8 +874,9 @@ class Interface(tk.Frame):
         root.destroy()
 
     def save_draws(self):
+        self.cnt_validator = []
         self.current_value_saturation.set(0.0)
-        self.count_feature = 0
+
         self.save_draw_array = np.asarray(self.screen_main)
         self.save_draw_array = imp.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
 
