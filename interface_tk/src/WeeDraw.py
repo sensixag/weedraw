@@ -6,6 +6,7 @@ import PIL
 import cv2
 import sys
 import imgaug as im
+from tkinter.colorchooser import askcolor
 
 try:
 
@@ -82,6 +83,7 @@ class Interface(tk.Frame):
         self.super_pixel_bool = False
         self.opacity = False
         self.bool_draw = False
+        self.delete_contourn = False
         self.use_neural_network = False
         self.path_save_img_rgb = "dataset/rgb"
         self.path_save_img_bin = "dataset/binario"
@@ -268,6 +270,10 @@ class Interface(tk.Frame):
         self.buttons.next_btn.bind("<Button-1>", partial(self.get_btn, key="Next"))
         self.buttons.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
+        self.button_select_color = tk.Button(root, text="Cor para marcação", command=self.change_color, fg="white")
+        self.button_select_color.place(relx=0.025, rely=0.375, height=43, width=165)
+        self.button_select_color.configure(bg=self.color_background)
+
         self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
         self.canvas.pack()
 
@@ -364,9 +370,7 @@ class Interface(tk.Frame):
     # Metodos para receber os valores do slider de saturação
     def get_current_value_saturation(self):
         self.slider_saturation = int(self.current_value_saturation.get())
-        print("valor slider :", self.slider_saturation)
         if self.bool_draw:
-            print("Na condicao")
             self.image_down = SatureImg().saturation(
                 self.image_down, self.slider_saturation - self.slider_saturation_old
             )
@@ -402,24 +406,8 @@ class Interface(tk.Frame):
 
     def keyboard(self, event):
         self.key_pressed = event.char
-        if self.key_pressed == "r":
-            self.color_line = 1
-            print("r")
-
-        if self.key_pressed == "g":
-            self.color_line = 2
-            print("g")
-
-        if self.key_pressed == "b":
-            self.color_line = 3
-            print("b")
-
-        if self.key_pressed == "p":
-            self.color_line = 0
-            print("p")
-
-        if self.key_pressed == "x":
-            cv2.fillPoly(self.image_down, pts=self.contours, color=(255, 0, 0, self.slider_opacity))
+        self.key_code = event.keycode
+        print("tecla: ", self.key_pressed, event.keycode)
 
         if self.super_pixel_bool:
             self.screen_main, self.draw = Draw().reset_draw_screen(
@@ -429,9 +417,9 @@ class Interface(tk.Frame):
                 self.screen_height,
                 option="CLEAN_JUST_OUTLINE_RGB",
             )
-
-        self.color_line_rgb = self.color_map[self.color_line]
-        print(self.color_line)
+        if self.key_code == 119:
+            print("Contorno Deletado")
+            self.delete_contourn = True
 
     def get_btn(self, event, key):
         self.event_btn = key
@@ -475,7 +463,6 @@ class Interface(tk.Frame):
             self.super_pixel_bool = False
 
         elif key == "10":
-            print("10")
             self.pencil_draw_bool = False
             self.polygon_draw_bool = False
             self.opacity = False
@@ -489,7 +476,6 @@ class Interface(tk.Frame):
 
         elif self.name_tif != "" and self.name_reference_binary != "" and key == "5":
             # self.remove_buttons('Draw Menu')
-            print("5")
             self.reference_binary = GdalManipulations.shp_to_bin(self, self.name_reference_binary, self.name_tif)
             self.remove_buttons("Fisrt Menu")
             self.labelling_start()
@@ -564,7 +550,6 @@ class Interface(tk.Frame):
         return current_position
 
     def button_click(self, event=None, key=None):
-        print("key :", key)
         if self.bool_draw:
             self.save_draws()
 
@@ -602,7 +587,7 @@ class Interface(tk.Frame):
             img = self.neural_network.predict_image(self.imgparcela)
             if self.option_of_draw == "CNT":
                 self.contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
-                cv2.drawContours(self.array_screen_neural, self.contours, -1, (255, 0, 0, 255), 1)
+                cv2.drawContours(self.array_screen_neural, self.contours, -1, (self.color_line_rgb + (255,)), 2)
                 self.screen_neural = Image.fromarray(self.array_screen_neural)
                 self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
 
@@ -612,7 +597,6 @@ class Interface(tk.Frame):
                     self, img=img, color=self.color_line_rgb, transparency=self.slider_opacity
                 )
                 self.screen_main.paste(img, (0, 0), img)
-            # img = Image.fromarray(img)
 
             self.update_img(self.screen_main)
 
@@ -632,6 +616,11 @@ class Interface(tk.Frame):
 
         self.canvas.pack()
 
+    def change_color(self):
+        color = askcolor(title="Selecione a cor para utilizar na marcação ")
+        self.color_line_rgb = color[0]
+        root.configure(bg=color[1])
+
     def get_right_click(self, event):
         self.current_points.clear()
 
@@ -647,7 +636,7 @@ class Interface(tk.Frame):
             self.segmentation = Watershed().watershed(
                 self.imgparcela, self.image_array_gray, self.color_map, self.screen_width, self.screen_height
             )
-            self.segmentation = imp.color_to_transparency(self.image_array_gray, self.segmentation, self.slider_opacity)
+            self.segmentation = imp.color_to_transparency(self.image_array_gray, self.slider_opacity)
             self.screen_main.paste(self.segmentation, (0, 0), self.segmentation)
             self.update_img(self.screen_main)
 
@@ -678,22 +667,41 @@ class Interface(tk.Frame):
 
             for i in range(0, len(self.cnt_validator)):
                 r = cv2.pointPolygonTest(self.contours[i], (self.lasx, self.lasy), False)
-                print(r)
                 if r > 0:
                     self.cnt_validator[i] = not self.cnt_validator[i]
                     print("Selected contour ", i)
                     self.ctn = self.contours[i]
+                    print("self.cnt_validator :", self.cnt_validator)
 
                     if self.cnt_validator[i] == True:
-                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (255, 0, 0, 255), 3)
-                        cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(255, 0, 0, 255))
+                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (self.color_line_rgb + (255,)), 3)
+                        cv2.fillPoly(
+                            self.array_screen_neural,
+                            pts=[self.ctn],
+                            color=(self.color_line_rgb + (self.slider_opacity,)),
+                        )
 
                     else:
                         cv2.drawContours(self.array_screen_neural, self.ctn, -1, (0, 0, 0, 255), 3)
+                        cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(0, 0, 0, self.slider_opacity))
+
+                    if self.delete_contourn:
+                        print("Entrei na deleção")
+                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (0, 0, 0, 255), 3)
                         cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(0, 0, 0, 255))
+                        self.delete_contourn = False
+                        self.screen_neural = Image.fromarray(self.array_screen_neural)
+                        image_new = []
+                        for item in self.screen_neural.getdata():
+                            if item[:3] == (0, 0, 0):
+                                image_new.append((0, 0, 0, 0))
+
+                        self.screen_neural.putdata(image_new)
+                        self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
 
                     self.screen_neural = Image.fromarray(self.array_screen_neural)
                     self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+                    self.update_img(self.screen_main)
 
             self.bool_draw = True
             self.update_img(self.screen_main)
