@@ -6,7 +6,6 @@ from keras_segmentation.predict import predict
 from keras.preprocessing import image
 from numpy.core.records import array
 from tensorflow.python.keras.backend import print_tensor
-from tensorflow.python.keras.preprocessing.image import img_to_array
 
 from matplotlib import pyplot as plt
 from matplotlib import cm
@@ -33,7 +32,7 @@ class NeuralFunctions:
             img_true = cv2.imread(path_rgb, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img_true, (256, 256))
             img = image.load_img(path_rgb, target_size=(256, 256))
-            img = image.img_to_array(img)
+            img = np.array(img)
             img = img / 255
 
         elif option == "array":

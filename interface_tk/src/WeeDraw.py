@@ -1,4 +1,3 @@
-from turtle import update
 import numpy as np
 import os
 import pathlib
@@ -384,7 +383,6 @@ class Interface(tk.Frame):
     def slider_changed_saturation(self, event):
         self.set_slider_saturation.configure(text=self.get_current_value_saturation())
 
-    # Metodos para receber os valores do slider de contorno
     def slider_changed_contourn(self, event):
         self.slider_pencil = self.current_value_contourn.get()
         if self.slider_pencil < 10:
@@ -392,7 +390,6 @@ class Interface(tk.Frame):
 
         self.set_slider_contourn.configure(text=self.current_value_contourn.get())
 
-    # Metodos para receber os valores do slider de opacidade
     def get_current_value_opacity(self):
         self.slider_opacity = int(self.current_value_opacity.get())
 
@@ -409,16 +406,8 @@ class Interface(tk.Frame):
         self.key_code = event.keycode
         print("tecla: ", self.key_pressed, event.keycode)
 
-        if self.super_pixel_bool:
-            self.screen_main, self.draw = Draw().reset_draw_screen(
-                self.screen_main,
-                self.screen_watershed,
-                self.screen_width,
-                self.screen_height,
-                option="CLEAN_JUST_OUTLINE_RGB",
-            )
         if self.key_code == 119:
-            print("Contorno Deletado")
+            print("Tentando Deletar")
             self.delete_contourn = True
 
     def get_btn(self, event, key):
@@ -631,14 +620,7 @@ class Interface(tk.Frame):
         self.screen_neural, _ = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
 
     def mouse_release(self, event):
-        if self.super_pixel_bool:
-
-            self.segmentation = Watershed().watershed(
-                self.imgparcela, self.image_array_gray, self.color_map, self.screen_width, self.screen_height
-            )
-            self.segmentation = imp.color_to_transparency(self.image_array_gray, self.slider_opacity)
-            self.screen_main.paste(self.segmentation, (0, 0), self.segmentation)
-            self.update_img(self.screen_main)
+        self.update_img(self.screen_main)
 
     def get_x_and_y(self, event):
         self.lasx, self.lasy = event.x, event.y
@@ -655,7 +637,7 @@ class Interface(tk.Frame):
             )
             self.update_img(self.screen_main)
 
-        if self.use_neural_network and self.option_of_draw == "CNT":
+        if self.use_neural_network and self.option_of_draw == "CNT" and self.super_pixel_bool:
             self.ctn = []
             if self.first_click == True:
                 self.array_screen_neural = np.array(self.screen_neural)
@@ -687,7 +669,7 @@ class Interface(tk.Frame):
 
                     if self.delete_contourn:
                         print("Entrei na deleção")
-                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (0, 0, 0, 255), 3)
+                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (0, 0, 0, 255), 5)
                         cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(0, 0, 0, 255))
                         self.delete_contourn = False
                         self.screen_neural = Image.fromarray(self.array_screen_neural)
@@ -724,27 +706,6 @@ class Interface(tk.Frame):
             )
             self.bool_draw = True
             self.update_img(self.screen_main)
-
-        if self.super_pixel_bool:
-            self.draw = Draw().draw_countour(
-                self.draw,
-                self.color_line_rgb,
-                self.old_x,
-                self.old_y,
-                self.lasx,
-                self.lasy,
-                int(self.current_value_opacity.get()),
-                int(self.slider_pencil),
-            )
-            self.update_img(self.screen_main)
-
-            self.draw_watershed.line(
-                ((self.old_x, self.old_y, self.lasx, self.lasy)), self.color_line, width=int(self.slider_pencil)
-            )
-
-            self.image_array_gray = np.array(self.screen_watershed.copy(), dtype="float32")
-            self.image_array_gray = np.array(self.image_array_gray, dtype="int32")
-            self.bool_draw = True
 
         elif not self.pencil_draw_bool and not self.polygon_draw_bool:
             self.lasx, self.lasy = event.x, event.y
@@ -881,7 +842,30 @@ class Interface(tk.Frame):
                 f.write(string_text.encode("utf-8", "ignore"))
         root.destroy()
 
+
+    def eliminate_invalidated_contourns(self):
+        self.array_screen_neural = np.array(self.screen_neural)
+
+        for i in range(len(self.cnt_validator)):
+            if self.cnt_validator[i] == True:
+                cv2.drawContours(self.array_screen_neural, self.contours[i], -1, (self.color_line_rgb + (255,)), 3)
+                cv2.fillPoly(
+                    self.array_screen_neural,
+                    pts=[self.contours[i]],
+                    color=(self.color_line_rgb + (self.slider_opacity,)),
+                )
+
+            else:
+                cv2.drawContours(self.array_screen_neural, self.contours[i], -1, (0, 0, 0, 255), 3)
+                cv2.fillPoly(self.array_screen_neural, pts=[self.contours[i]], color=(0, 0, 0, self.slider_opacity))
+            
+        self.screen_neural = Image.fromarray(self.array_screen_neural)
+        self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+
+
     def save_draws(self):
+
+        self.eliminate_invalidated_contourns()
         self.cnt_validator = []
         self.current_value_saturation.set(0.0)
 
