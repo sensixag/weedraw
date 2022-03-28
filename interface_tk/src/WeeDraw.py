@@ -33,7 +33,7 @@ from osgeo import gdal, ogr, osr
 from callbacks_tk import Screen
 from menu import ButtonSettingsLabelling, ButtonsLabelling
 from neural import NeuralFunctions
-from imgs_manipulations import SatureImg, GdalManipulations, Watershed
+from imgs_manipulations import SatureImg, GdalManipulations, Watershed, LoadImagesAnalises
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
 
@@ -87,6 +87,7 @@ class Interface(tk.Frame):
         self.path_save_img_rgb = "dataset/rgb"
         self.path_save_img_bin = "dataset/binario"
         self.path_save_img_negative = "dataset/negativos"
+        self.user_choosed = ''
         self.directory_saved = ""
         self.frame_root = root
         self.color_line = 1
@@ -117,8 +118,7 @@ class Interface(tk.Frame):
         self.check_neural = tk.IntVar()
 
         self.old_choose = ""
-        self.OptionList = ["Efetuar Marcacoes em Ortomosaicos", "Efetuar Marcacoes por diretorios"]
-
+        self.OptionList = ["Efetuar Marcacoes em Ortomosaicos", "Analisar os Resultados"]
         img = ImageTk.PhotoImage(file=r"../icons/icone_sensix.png")
         root.call("wm", "iconphoto", root._w, img)
 
@@ -297,7 +297,7 @@ class Interface(tk.Frame):
         self.label3 = tk.Label(root)
         self.label3.place(relx=0.117, rely=0.68, height=21, width=260)
         self.label3.configure(activebackground="#f9f9f9")
-        self.label3.configure(text="Porcentagem de fundo preto permitida:")
+        self.label3.configure(text="Porcentagem de fundo preto permitida :")
 
         self.spinbox_backg = tk.Spinbox(root, from_=5.0, to=100.0, increment=5, textvariable=self.spn_box_1)
         self.spinbox_backg.place(relx=0.63, rely=0.69, relheight=0.046, relwidth=0.243)
@@ -520,6 +520,7 @@ class Interface(tk.Frame):
 
     def callback_opt(self, *args):
         if self.variable.get() == "Efetuar Marcacoes em Ortomosaicos":
+            self.user_choosed = 'DRAW'
             if not os.path.isdir(self.path_save_img_rgb):
                 os.makedirs(self.path_save_img_rgb, exist_ok=True)
 
@@ -531,6 +532,18 @@ class Interface(tk.Frame):
 
             self.settings_labelling_menu()
 
+        if self.variable.get() == "Analisar os Resultados":
+            self.user_choosed = 'ANALISES'
+            self.change_imgs = 0
+
+            print("Analisar os Resultados")
+            self.imgs_rgb_array, self.imgs_bin_array = LoadImagesAnalises('dataset/rgb', 'dataset/binario').load_images()
+            self.labelling_start()
+            self.screen_main, self.draw = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
+            self.buttons.next_btn.bind("<Button-1>", partial(self.button_click, key="1"))
+            self.buttons.back_btn.bind("<Button-1>", partial(self.button_click, key="0"))
+
+
         self.old_choose = self.variable.get()
 
     def percent_progress(self, x, y, total_x, total_y):
@@ -541,56 +554,72 @@ class Interface(tk.Frame):
     def button_click(self, event=None, key=None):
         if self.bool_draw:
             self.save_draws()
-
-        if key == "1":
-            self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(
-                self.x_crop,
-                self.y_crop,
-                self.iterator_x,
-                self.iterator_y,
-                self.background_percent,
-                self.iterator_recoil,
-                self.mosaico,
-                self.daninha_band_1,
-            )
-
-        elif key == "0":
-            self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_back_img_in_mosaic(
-                self.x_crop,
-                self.y_crop,
-                self.iterator_x,
-                self.iterator_y,
-                self.background_percent,
-                self.iterator_recoil,
-                self.mosaico,
-                self.daninha_band_1,
-            )
-
-        self.imgparcela = GdalManipulations().get_image_rgb_by_band(
-            self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1
-        )
-        self.image_down = self.imgparcela.copy()
-        self.image_down = cv2.resize(self.image_down, (self.screen_width, self.screen_height))
-        if self.use_neural_network:
-            self.array_screen_neural = np.array(self.screen_neural)
-            img = self.neural_network.predict_image(self.imgparcela)
-            if self.option_of_draw == "CNT":
-                self.contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
-                cv2.drawContours(self.array_screen_neural, self.contours, -1, (self.color_line_rgb + (255,)), 2)
-                self.screen_neural = Image.fromarray(self.array_screen_neural)
-                self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
-
-            else:
-                img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
-                img = imp.color_to_transparency(
-                    self, img=img, color=self.color_line_rgb, transparency=self.slider_opacity
+        
+        if self.user_choosed == "DRAW":
+            if key == "1":
+                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(
+                    self.x_crop,
+                    self.y_crop,
+                    self.iterator_x,
+                    self.iterator_y,
+                    self.background_percent,
+                    self.iterator_recoil,
+                    self.mosaico,
+                    self.daninha_band_1,
                 )
-                self.screen_main.paste(img, (0, 0), img)
 
-            self.update_img(self.screen_main)
+            elif key == "0":
+                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_back_img_in_mosaic(
+                    self.x_crop,
+                    self.y_crop,
+                    self.iterator_x,
+                    self.iterator_y,
+                    self.background_percent,
+                    self.iterator_recoil,
+                    self.mosaico,
+                    self.daninha_band_1,
+                )
 
-        self.segmentation = np.zeros_like(self.image_down)
+            self.imgparcela = GdalManipulations().get_image_rgb_by_band(
+                self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1
+            )
+            self.image_down = self.imgparcela.copy()
+            self.image_down = cv2.resize(self.image_down, (self.screen_width, self.screen_height))
+            if self.use_neural_network:
+                self.array_screen_neural = np.array(self.screen_neural)
+                img = self.neural_network.predict_image(self.imgparcela)
+                if self.option_of_draw == "CNT":
+                    self.contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
+                    cv2.drawContours(self.array_screen_neural, self.contours, -1, (self.color_line_rgb + (255,)), 2)
+                    self.screen_neural = Image.fromarray(self.array_screen_neural)
+                    self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
 
+                else:
+                    img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
+                    img = imp.color_to_transparency(
+                        self, img=img, color=self.color_line_rgb, transparency=self.slider_opacity
+                    )
+                    self.screen_main.paste(img, (0, 0), img)
+
+                self.update_img(self.screen_main)
+
+            self.segmentation = np.zeros_like(self.image_down)
+
+        if self.user_choosed == "ANALISES":            
+            if key == "1":
+                print(self.imgs_rgb_array[self.change_imgs])
+                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.image_down = self.imgparcela.copy()
+                self.change_imgs += 1
+
+            elif key == "0":
+                print(self.imgs_rgb_array[self.change_imgs])
+                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.change_imgs -= 1
+
+                if self.change_imgs < 0:
+                    pass
+                
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
         self.image_tk = ImageTk.PhotoImage(self.img_array_tk)
@@ -864,43 +893,53 @@ class Interface(tk.Frame):
 
 
     def save_draws(self):
+        if self.user_choosed == 'DRAW':
+            self.eliminate_invalidated_contourns()
+        
+            self.cnt_validator = []
+            self.current_value_saturation.set(0.0)
 
-        self.eliminate_invalidated_contourns()
-        self.cnt_validator = []
-        self.current_value_saturation.set(0.0)
+            self.save_draw_array = np.asarray(self.screen_main)
+            self.save_draw_array = imp.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
 
-        self.save_draw_array = np.asarray(self.screen_main)
-        self.save_draw_array = imp.prepare_array(self, self.save_draw_array, self.iterator_x, self.iterator_y)
+            if cv2.countNonZero(self.save_draw_array) == 0:
+                cv2.imwrite(
+                    self.path_save_img_negative + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
+                    self.imgparcela,
+                )
+            else:
+                cv2.imwrite(
+                    self.path_save_img_rgb + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
+                    self.imgparcela,
+                )
+                cv2.imwrite(
+                    self.path_save_img_bin + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
+                    self.save_draw_array,
+                )
+                self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
+                self.dst_img.FlushCache()
 
-        if cv2.countNonZero(self.save_draw_array) == 0:
-            cv2.imwrite(
-                self.path_save_img_negative + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                self.imgparcela,
-            )
-        else:
-            cv2.imwrite(
-                self.path_save_img_rgb + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                self.imgparcela,
-            )
-            cv2.imwrite(
-                self.path_save_img_bin + "/daninha_{x}_{y}.png".format(x=int(self.x_crop), y=int(self.y_crop)),
-                self.save_draw_array,
-            )
-            self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
-            self.dst_img.FlushCache()
-
-            self.screen_main, self.draw, self.screen_watershed, self.draw_watershed = Draw().reset_draw_screen(
-                self.screen_main, self.screen_watershed, self.screen_width, self.screen_height
-            )
-
-            self.screen_neural, _, = Draw().reset_draw_screen(
+                self.screen_neural, _, = Draw().reset_draw_screen(
                 self.screen_main,
                 self.screen_watershed,
                 self.screen_width,
                 self.screen_height,
                 option="CLEAN_JUST_OUTLINE_RGB",
-            )
+                )
 
+
+                self.screen_main, self.draw, self.screen_watershed, self.draw_watershed = Draw().reset_draw_screen(
+                    self.screen_main, self.screen_watershed, self.screen_width, self.screen_height
+                )
+
+
+        self.screen_main, self.draw = Draw().reset_draw_screen(
+        self.screen_main,
+        self.draw,
+        self.screen_width,
+        self.screen_height,
+        option="CLEAN_JUST_OUTLINE_RGB",
+        )
 
 if __name__ == "__main__":
 
