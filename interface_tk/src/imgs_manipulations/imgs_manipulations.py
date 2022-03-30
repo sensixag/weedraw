@@ -1,7 +1,7 @@
 import cv2
 from PIL import Image
 import numpy as np
-
+import os
 
 class SatureImg:
     def saturation(self, image: list, increment: float) -> list:
@@ -42,13 +42,28 @@ class Watershed:
         return segmentation
 
 
+class LoadImagesAnalises:
+    def __init__(self, path_img_rgb, path_img_bin):
+        self.path_img_rgb = path_img_rgb  
+        self.path_img_bin = path_img_bin 
+
+    def load_images(self):
+        names_imgs_rgb_array = []
+        names_imgs_bin_array = []
+
+        for names_imgs_array in os.listdir(self.path_img_bin):
+            names_imgs_rgb_array.append(self.path_img_rgb + "/" + names_imgs_array)
+            names_imgs_bin_array.append(self.path_img_bin + "/" + names_imgs_array)
+            
+        return names_imgs_rgb_array, names_imgs_bin_array
+
 class ImagesManipulations:
     def find_contourns(self, img, screen_width, screen_height):
-        # dots            = cv2.GaussianBlur(img, (21, 21), 0)
-        # dots_cpy       = cv2.erode(dots, (3, 3))
-        # dots_cpy        = cv2.dilate(img, None, iterations=4)
-        # filter          = cv2.threshold(dots_cpy, 128, 255, cv2.THRESH_BINARY)[1]
-        img = cv2.resize(img, (screen_width, screen_height))
+        dots            = cv2.GaussianBlur(img, (21, 21), 0)
+        dots_cpy       = cv2.erode(dots, (3, 3))
+        dots_cpy        = cv2.dilate(dots_cpy, None, iterations=1)
+        filter          = cv2.threshold(dots_cpy, 128, 255, cv2.THRESH_BINARY)[1]
+        img = cv2.resize(filter, (screen_width, screen_height))
         contours, hier = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         print(len(contours))
 
@@ -57,13 +72,6 @@ class ImagesManipulations:
             self.y_ctn = int(sum(c[:, 0, 1]) / len(c))
 
         return contours
-
-    def image_to_tk_screen(self, img, screen_width, screen_height, transparency):
-        img = cv2.resize(img, (screen_width, screen_height))
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGBA)
-        img = Image.fromarray(img)
-
-        return img
 
     def color_to_transparency(self, img, color=(0, 0, 0), transparency=128):
         image_new = []
@@ -76,6 +84,31 @@ class ImagesManipulations:
         img.putdata(image_new)
 
         return img
+
+
+    def merge_binary_in_rgb(self, screen_main, img_bin, color=(0, 0, 0), transparency=255):
+        
+        img_bin = cv2.cvtColor(img_bin, cv2.COLOR_BGR2RGBA)
+        image_pil_bin = Image.fromarray(img_bin)
+        image_pil_bin = self.color_to_transparency(self, image_pil_bin, color, transparency)
+        screen_main.paste(image_pil_bin, (0, 0), image_pil_bin)
+
+        return screen_main
+
+    def image_to_tk_screen(self, img, screen_width, screen_height, transparency):
+        img = cv2.resize(img, (screen_width, screen_height))
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGBA)
+        img = Image.fromarray(img)
+
+        return img
+
+    def draw_dir_to_tk_screen(self, img, screen_width, screen_height, transparency):
+        img = cv2.resize(img, (screen_width, screen_height))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+        img = Image.fromarray(img)
+
+        return img
+
 
     def diff_contourns(self, img_neural, img_reference):
         """

@@ -607,19 +607,31 @@ class Interface(tk.Frame):
 
         if self.user_choosed == "ANALISES":            
             if key == "1":
-                print(self.imgs_rgb_array[self.change_imgs])
                 self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.img_bin = cv2.imread(self.imgs_bin_array[self.change_imgs])
+                self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
+                self.img_bin = Image.fromarray(cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2RGBA))
+                self.img_bin = imp.color_to_transparency(self, self.img_bin, self.color_line_rgb, transparency=self.slider_opacity)
+
                 self.image_down = self.imgparcela.copy()
+                self.screen_main.paste(self.img_bin, (0, 0), self.img_bin)
                 self.change_imgs += 1
 
             elif key == "0":
-                print(self.imgs_rgb_array[self.change_imgs])
-                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
                 self.change_imgs -= 1
-
+                
                 if self.change_imgs < 0:
                     pass
                 
+                print(self.imgs_rgb_array[self.change_imgs])
+                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.img_bin = cv2.imread(self.imgs_bin_array[self.change_imgs])
+                self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
+                self.img_bin = Image.fromarray(cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2RGBA))
+                self.img_bin = imp.color_to_transparency(self, self.img_bin, self.color_line_rgb, transparency=self.slider_opacity)
+                self.image_down = self.imgparcela.copy()
+                self.screen_main.paste(self.img_bin, (0, 0), self.img_bin)
+
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
         self.image_tk = ImageTk.PhotoImage(self.img_array_tk)
