@@ -62,13 +62,13 @@ class Interface(tk.Frame):
         self.array_clicks = []
         self.current_points = []
         self.current_points_bkp = []
-        self.draws_array = [[]]
+        self.draw_array = [[]]
         self.features_polygons = [[]]
         self.polygons_ids_array = []
         self.vertices_ids_array = []
 
         self.save_draw_array = None
-        self.option_of_draw = "CNT"
+        self.option_of_draw = ""
         self.name_tif = ""
         self.name_reference_binary = ""
         self.name_reference_neural = ""
@@ -557,32 +557,17 @@ class Interface(tk.Frame):
         
         if self.user_choosed == "DRAW":
             if key == "1":
-                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(
-                    self.x_crop,
-                    self.y_crop,
-                    self.iterator_x,
-                    self.iterator_y,
-                    self.background_percent,
-                    self.iterator_recoil,
-                    self.mosaico,
-                    self.daninha_band_1,
+                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1,
                 )
 
             elif key == "0":
-                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_back_img_in_mosaic(
-                    self.x_crop,
-                    self.y_crop,
-                    self.iterator_x,
-                    self.iterator_y,
-                    self.background_percent,
-                    self.iterator_recoil,
-                    self.mosaico,
-                    self.daninha_band_1,
+                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_back_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1,
                 )
 
             self.imgparcela = GdalManipulations().get_image_rgb_by_band(
                 self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1
             )
+
             self.image_down = self.imgparcela.copy()
             self.image_down = cv2.resize(self.image_down, (self.screen_width, self.screen_height))
             if self.use_neural_network:
@@ -605,32 +590,58 @@ class Interface(tk.Frame):
 
             self.segmentation = np.zeros_like(self.image_down)
 
-        if self.user_choosed == "ANALISES":            
+        if self.user_choosed == "ANALISES":       
+
+            self.screen_marking, self.draw_marking = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
+            self.draw_marking_array = np.array(self.screen_marking)
+
             if key == "1":
                 self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
                 self.img_bin = cv2.imread(self.imgs_bin_array[self.change_imgs])
                 self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
-                self.img_bin = Image.fromarray(cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2RGBA))
-                self.img_bin = imp.color_to_transparency(self, self.img_bin, self.color_line_rgb, transparency=self.slider_opacity)
+
+                if self.option_of_draw == "CNT":
+                    self.img_bin = cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2GRAY)
+                    self.img_bin = self.img_bin.astype("uint8")
+                    self.contours = imp.find_contourns(self, self.img_bin, self.screen_width, self.screen_height)
+                    cv2.drawContours(self.draw_marking_array, self.contours, -1, (self.color_line_rgb + (255,)), 2)
+                    self.draw_marking = Image.fromarray(self.draw_marking_array)
+                
+                else:
+                    self.draw_marking = Image.fromarray(cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2RGBA))
+                    self.draw_marking = imp.color_to_transparency(self, self.draw_marking, self.color_line_rgb, transparency=self.slider_opacity)
 
                 self.image_down = self.imgparcela.copy()
-                self.screen_main.paste(self.img_bin, (0, 0), self.img_bin)
+                self.screen_main.paste(self.draw_marking, (0, 0), self.draw_marking)
                 self.change_imgs += 1
 
             elif key == "0":
-                self.change_imgs -= 1
-                
-                if self.change_imgs < 0:
+
+                if self.change_imgs-1 < 0:
+                    tkinter.messagebox.showinfo(title="Aviso", message="Esta é a Primeira Imagem", **options)
                     pass
                 
-                print(self.imgs_rgb_array[self.change_imgs])
+                elif self.change_imgs >= 1:
+                    self.change_imgs -=1
+
                 self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
                 self.img_bin = cv2.imread(self.imgs_bin_array[self.change_imgs])
                 self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
-                self.img_bin = Image.fromarray(cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2RGBA))
-                self.img_bin = imp.color_to_transparency(self, self.img_bin, self.color_line_rgb, transparency=self.slider_opacity)
+
+                if self.option_of_draw == "CNT":
+                    self.img_bin = cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2GRAY)
+                    self.img_bin = self.img_bin.astype("uint8")
+                    self.contours = imp.find_contourns(self, self.img_bin, self.screen_width, self.screen_height)
+                    cv2.drawContours(self.draw_marking_array, self.contours, -1, (self.color_line_rgb + (255,)), 2)
+                    self.draw_marking = Image.fromarray(self.draw_marking_array)
+                
+                else:
+                    self.draw_marking = Image.fromarray(cv2.cvtColor(self.img_bin, cv2.COLOR_BGR2RGBA))
+                    self.draw_marking = imp.color_to_transparency(self, self.img_bin, self.color_line_rgb, transparency=self.slider_opacity)
+
                 self.image_down = self.imgparcela.copy()
-                self.screen_main.paste(self.img_bin, (0, 0), self.img_bin)
+                self.screen_main.paste(self.draw_marking, (0, 0), self.draw_marking)
+
 
         self.img_array_tk = cv2.resize(self.imgparcela, (self.screen_width, self.screen_height))
         self.img_array_tk = PIL.Image.fromarray(self.img_array_tk)
@@ -944,6 +955,13 @@ class Interface(tk.Frame):
                     self.screen_main, self.screen_watershed, self.screen_width, self.screen_height
                 )
 
+        if self.user_choosed == "ANALISES":        
+            self.screen_marking, _  = Draw().reset_draw_screen(outline_rgb=self.screen_marking, 
+                                                               outline_gray=self.draw_marking,
+                                                               screen_width=self.screen_width, 
+                                                               screen_height=self.screen_height, 
+                                                               option="CLEAN_JUST_OUTLINE_RGB"
+                )
 
         self.screen_main, self.draw = Draw().reset_draw_screen(
         self.screen_main,
