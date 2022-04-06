@@ -19,10 +19,10 @@ class Draw:
                 joint="curve",
             )
 
-        Offset = (10) / 2
+        Offset = (4) / 2
         draw_line.ellipse(
             (position_x - Offset, position_y - Offset, position_x + Offset, position_y + Offset),
-            (color_line_rgb + (transparency,)),
+            ((0, 0, 0) + (transparency,)),
         )
 
         return draw_line

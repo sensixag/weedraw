@@ -4,7 +4,6 @@ import pathlib
 import PIL
 import cv2
 import sys
-import imgaug as im
 from tkinter.colorchooser import askcolor
 
 try:
@@ -68,7 +67,7 @@ class Interface(tk.Frame):
         self.vertices_ids_array = []
 
         self.save_draw_array = None
-        self.option_of_draw = ""
+        self.option_of_draw = "CNT"
         self.name_tif = ""
         self.name_reference_binary = ""
         self.name_reference_neural = ""
@@ -79,7 +78,7 @@ class Interface(tk.Frame):
         self.color_frame_over_center = "black"
         self.pencil_draw_bool = True
         self.polygon_draw_bool = False
-        self.super_pixel_bool = False
+        self.validate_contorn = False
         self.opacity = False
         self.bool_draw = False
         self.delete_contourn = False
@@ -404,12 +403,8 @@ class Interface(tk.Frame):
     def keyboard(self, event):
         self.key_pressed = event.char
         self.key_code = event.keycode
-        print("tecla: ", self.key_pressed, event.keycode)
 
-        if self.key_code == 119:
-            print("Tentando Deletar")
-            self.delete_contourn = True
-
+       
     def get_btn(self, event, key):
         self.event_btn = key
         if key == "0":
@@ -428,13 +423,13 @@ class Interface(tk.Frame):
             self.pencil_draw_bool = True
             self.polygon_draw_bool = False
             self.opacity = False
-            self.super_pixel_bool = False
+            self.validate_contorn = False
 
         elif key == "7":
             self.pencil_draw_bool = False
             self.polygon_draw_bool = False
             self.opacity = False
-            self.super_pixel_bool = False
+            self.validate_contorn = False
 
         elif key == "8":
             self.opacity = not self.opacity
@@ -449,13 +444,13 @@ class Interface(tk.Frame):
             self.pencil_draw_bool = False
             self.polygon_draw_bool = True
             self.opacity = False
-            self.super_pixel_bool = False
+            self.validate_contorn = False
 
         elif key == "10":
             self.pencil_draw_bool = False
             self.polygon_draw_bool = False
             self.opacity = False
-            self.super_pixel_bool = True
+            self.validate_contorn = True
 
         elif (
             self.name_tif != "" and self.name_reference_binary != "" and self.name_reference_neural != "" and key == "5"
@@ -536,7 +531,6 @@ class Interface(tk.Frame):
             self.user_choosed = 'ANALISES'
             self.change_imgs = 0
 
-            print("Analisar os Resultados")
             self.imgs_rgb_array, self.imgs_bin_array = LoadImagesAnalises('dataset/rgb', 'dataset/binario').load_images()
             self.labelling_start()
             self.screen_main, self.draw = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
@@ -557,12 +551,11 @@ class Interface(tk.Frame):
         
         if self.user_choosed == "DRAW":
             if key == "1":
-                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1,
-                )
+                self.bool_draw = True
+                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1)
 
             elif key == "0":
-                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_back_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1,
-                )
+                self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_back_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1)
 
             self.imgparcela = GdalManipulations().get_image_rgb_by_band(
                 self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.mosaico, self.daninha_band_1
@@ -571,6 +564,7 @@ class Interface(tk.Frame):
             self.image_down = self.imgparcela.copy()
             self.image_down = cv2.resize(self.image_down, (self.screen_width, self.screen_height))
             if self.use_neural_network:
+                self.validate_contorn = True
                 self.array_screen_neural = np.array(self.screen_neural)
                 img = self.neural_network.predict_image(self.imgparcela)
                 if self.option_of_draw == "CNT":
@@ -581,9 +575,7 @@ class Interface(tk.Frame):
 
                 else:
                     img = imp.image_to_tk_screen(self, img, self.screen_width, self.screen_height, self.slider_opacity)
-                    img = imp.color_to_transparency(
-                        self, img=img, color=self.color_line_rgb, transparency=self.slider_opacity
-                    )
+                    img = imp.color_to_transparency(self, img=img, color=self.color_line_rgb, transparency=self.slider_opacity)
                     self.screen_main.paste(img, (0, 0), img)
 
                 self.update_img(self.screen_main)
@@ -596,6 +588,7 @@ class Interface(tk.Frame):
             self.draw_marking_array = np.array(self.screen_marking)
 
             if key == "1":
+                self.bool_draw = True
                 self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
                 self.img_bin = cv2.imread(self.imgs_bin_array[self.change_imgs])
                 self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
@@ -618,7 +611,7 @@ class Interface(tk.Frame):
             elif key == "0":
 
                 if self.change_imgs-1 < 0:
-                    tkinter.messagebox.showinfo(title="Aviso", message="Esta é a Primeira Imagem", **options)
+                    tk.messagebox.showinfo(title="Aviso", message="Esta é a Primeira Imagem")
                     pass
                 
                 elif self.change_imgs >= 1:
@@ -679,59 +672,36 @@ class Interface(tk.Frame):
 
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
-            self.draw = Draw().draw_polygon(
-                self.current_points,
-                self.draw,
-                self.color_line_rgb,
-                self.lasx,
-                self.lasy,
-                int(self.current_value_opacity.get()),
-            )
+            self.draw = Draw().draw_polygon(self.current_points, self.draw, self.color_line_rgb, self.lasx, self.lasy, int(self.current_value_opacity.get()))
             self.update_img(self.screen_main)
 
-        if self.use_neural_network and self.option_of_draw == "CNT" and self.super_pixel_bool:
+        if self.use_neural_network and self.option_of_draw == "CNT" and self.validate_contorn:
             self.ctn = []
             if self.first_click == True:
                 self.array_screen_neural = np.array(self.screen_neural)
                 for i in range(0, len(self.contours)):
                     self.cnt_validator.append(False)
 
-                # print("False")
                 self.first_click = False
 
             for i in range(0, len(self.cnt_validator)):
                 r = cv2.pointPolygonTest(self.contours[i], (self.lasx, self.lasy), False)
                 if r > 0:
+                    print('r :', r, 'i :', i)
                     self.cnt_validator[i] = not self.cnt_validator[i]
-                    print("Selected contour ", i)
                     self.ctn = self.contours[i]
-                    print("self.cnt_validator :", self.cnt_validator)
 
                     if self.cnt_validator[i] == True:
-                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (self.color_line_rgb + (255,)), 3)
+                        cv2.drawContours(self.array_screen_neural, [self.ctn], 0, (self.color_line_rgb + (255,)), 3)
                         cv2.fillPoly(
                             self.array_screen_neural,
                             pts=[self.ctn],
                             color=(self.color_line_rgb + (self.slider_opacity,)),
                         )
 
-                    else:
-                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (0, 0, 0, 255), 3)
+                    elif self.cnt_validator[i] == False:
+                        cv2.drawContours(self.array_screen_neural, [self.ctn], 0, (0, 0, 0, 255), 3)
                         cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(0, 0, 0, self.slider_opacity))
-
-                    if self.delete_contourn:
-                        print("Entrei na deleção")
-                        cv2.drawContours(self.array_screen_neural, self.ctn, -1, (0, 0, 0, 255), 5)
-                        cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(0, 0, 0, 255))
-                        self.delete_contourn = False
-                        self.screen_neural = Image.fromarray(self.array_screen_neural)
-                        image_new = []
-                        for item in self.screen_neural.getdata():
-                            if item[:3] == (0, 0, 0):
-                                image_new.append((0, 0, 0, 0))
-
-                        self.screen_neural.putdata(image_new)
-                        self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
 
                     self.screen_neural = Image.fromarray(self.array_screen_neural)
                     self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
@@ -746,22 +716,11 @@ class Interface(tk.Frame):
     def draw_smth(self, event):
         self.lasx, self.lasy = event.x, event.y
         if self.pencil_draw_bool:
-            self.draw = Draw().draw_countour(
-                self.draw,
-                self.color_line_rgb,
-                self.old_x,
-                self.old_y,
-                self.lasx,
-                self.lasy,
-                int(self.current_value_opacity.get()),
-                int(self.slider_pencil),
-            )
+            self.draw = Draw().draw_countour(self.draw, self.color_line_rgb, self.old_x, self.old_y, self.lasx, self.lasy, int(self.current_value_opacity.get()), int(self.slider_pencil))
             self.bool_draw = True
             self.update_img(self.screen_main)
 
-        elif not self.pencil_draw_bool and not self.polygon_draw_bool:
-            self.lasx, self.lasy = event.x, event.y
-
+        elif not self.pencil_draw_bool and not self.polygon_draw_bool and not self.validate_contorn:
             self.draw.line(
                 (self.old_x, self.old_y, self.lasx, self.lasy),
                 (0, 0, 0, 0),
@@ -775,7 +734,7 @@ class Interface(tk.Frame):
             )
             self.bool_draw = True
             self.update_img(self.screen_main)
-
+            
         self.old_x = self.lasx
         self.old_y = self.lasy
 
@@ -872,8 +831,16 @@ class Interface(tk.Frame):
             # Caso o arquivo exista e tenha valores validos
             if (os.path.getsize("log_progress.txt")) > 0:
                 values = lines.split(",")
-                self.x_crop = float(values[0])
-                self.y_crop = float(values[1])
+                
+                self.x_crop = float(values[0]) - self.iterator_x
+                self.y_crop = float(values[1]) - self.iterator_y
+                
+                if self.x_crop <= self.iterator_x:
+                    self.x_crop = float(values[0])
+
+                if self.y_crop <= self.iterator_y:
+                    self.y_crop = float(values[1])
+
                 self.directory_saved = str(values[2])
 
             bool_check_dir = True
@@ -900,6 +867,20 @@ class Interface(tk.Frame):
 
         for i in range(len(self.cnt_validator)):
             if self.cnt_validator[i] == True:
+                cv2.drawContours(self.array_screen_neural, self.contours[i], -1, (0, 0, 0, 255), 5)
+                cv2.fillPoly(self.array_screen_neural, pts=[self.contours[i]], color=(0, 0, 0, 255))
+            
+                self.screen_neural = Image.fromarray(self.array_screen_neural)
+                self.screen_neural = imp.color_to_transparency(self, img=self.screen_neural, color=(0, 0, 0), transparency=self.slider_opacity)
+                self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+                imp.color_to_transparency
+                self.update_img(self.screen_main)
+
+    def updade_contourns(self):
+        self.array_screen_neural = np.array(self.screen_neural)
+
+        for i in range(len(self.cnt_validator)):
+            if self.cnt_validator[i] == True:
                 cv2.drawContours(self.array_screen_neural, self.contours[i], -1, (self.color_line_rgb + (255,)), 3)
                 cv2.fillPoly(
                     self.array_screen_neural,
@@ -909,7 +890,7 @@ class Interface(tk.Frame):
 
             else:
                 cv2.drawContours(self.array_screen_neural, self.contours[i], -1, (0, 0, 0, 255), 3)
-                cv2.fillPoly(self.array_screen_neural, pts=[self.contours[i]], color=(0, 0, 0, self.slider_opacity))
+                cv2.fillPoly(self.array_screen_neural, pts=[self.contours[i]], color=(0, 0, 0, 255))
             
         self.screen_neural = Image.fromarray(self.array_screen_neural)
         self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
@@ -917,9 +898,13 @@ class Interface(tk.Frame):
 
     def save_draws(self):
         if self.user_choosed == 'DRAW':
-            self.eliminate_invalidated_contourns()
-        
+            #self.eliminate_invalidated_contourns()
             self.cnt_validator = []
+
+            if self.polygon_draw_bool:
+                self.current_points.clear()
+                self.polygon_draw_bool = False 
+
             self.current_value_saturation.set(0.0)
 
             self.save_draw_array = np.asarray(self.screen_main)
@@ -942,13 +927,7 @@ class Interface(tk.Frame):
                 self.dst_img.GetRasterBand(1).WriteArray(self.save_draw_array, xoff=self.x_crop, yoff=self.y_crop)
                 self.dst_img.FlushCache()
 
-                self.screen_neural, _, = Draw().reset_draw_screen(
-                self.screen_main,
-                self.screen_watershed,
-                self.screen_width,
-                self.screen_height,
-                option="CLEAN_JUST_OUTLINE_RGB",
-                )
+                self.screen_neural, _, = Draw().reset_draw_screen(self.screen_main, self.screen_watershed, self.screen_width, self.screen_height, option="CLEAN_JUST_OUTLINE_RGB")
 
 
                 self.screen_main, self.draw, self.screen_watershed, self.draw_watershed = Draw().reset_draw_screen(
@@ -956,20 +935,10 @@ class Interface(tk.Frame):
                 )
 
         if self.user_choosed == "ANALISES":        
-            self.screen_marking, _  = Draw().reset_draw_screen(outline_rgb=self.screen_marking, 
-                                                               outline_gray=self.draw_marking,
-                                                               screen_width=self.screen_width, 
-                                                               screen_height=self.screen_height, 
-                                                               option="CLEAN_JUST_OUTLINE_RGB"
+            self.screen_marking, _  = Draw().reset_draw_screen(outline_rgb=self.screen_marking, outline_gray=self.draw_marking,screen_width=self.screen_width, screen_height=self.screen_height, option="CLEAN_JUST_OUTLINE_RGB"
                 )
 
-        self.screen_main, self.draw = Draw().reset_draw_screen(
-        self.screen_main,
-        self.draw,
-        self.screen_width,
-        self.screen_height,
-        option="CLEAN_JUST_OUTLINE_RGB",
-        )
+        self.screen_main, self.draw = Draw().reset_draw_screen(self.screen_main, self.draw, self.screen_width, self.screen_height, option="CLEAN_JUST_OUTLINE_RGB")
 
 if __name__ == "__main__":
 
@@ -979,4 +948,5 @@ if __name__ == "__main__":
     root.resizable(False, False)
     obj.first_menu(root)
     root.geometry("800x800+50+10")
+    root.protocol("WM_DELETE_WINDOW", obj.destroy_aplication)
     root.mainloop()
