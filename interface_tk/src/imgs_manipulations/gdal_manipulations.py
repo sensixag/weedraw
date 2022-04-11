@@ -4,7 +4,6 @@ import cv2
 
 class GdalManipulations:
     def shp_to_bin(self, name_shp, name_tif, burn=255):
-        print("gdal")
         base_img = gdal.Open(name_tif, gdal.GA_ReadOnly)
         base_shp = ogr.Open(name_shp)
         base_shp_layer = base_shp.GetLayer()
@@ -33,16 +32,13 @@ class GdalManipulations:
 
     def next_img_in_mosaic(self, x_crop, y_crop, iterator_x, iterator_y, iterator_recoil, rgba_mosaic):
         if x_crop + iterator_x < rgba_mosaic.RasterXSize and x_crop + iterator_x > 0:
-            print("2a - x_crop :", x_crop)
             x_crop += iterator_x * iterator_recoil
 
         if x_crop + iterator_x >= rgba_mosaic.RasterXSize:
-            print("2b")
             x_crop = 0
             y_crop += iterator_y * iterator_recoil
 
         if y_crop + iterator_y > rgba_mosaic.RasterYSize:
-            print("2c")
             x_crop = -1
             y_crop = -1
 
@@ -50,11 +46,9 @@ class GdalManipulations:
 
     def back_img_in_mosaic(self, x_crop, y_crop, iterator_x, iterator_y, iterator_recoil, rgba_mosaic):
         if x_crop - iterator_x < rgba_mosaic.RasterXSize and x_crop - iterator_x > 0:
-            print("1a")
             x_crop -= iterator_x * iterator_recoil
 
         if x_crop - iterator_x <= 0 and y_crop != 0:
-            print("1b")
             x_crop = rgba_mosaic.RasterXSize
             y_crop -= iterator_y * iterator_recoil
 
@@ -77,7 +71,6 @@ class GdalManipulations:
             )
             current_img_in_mosaic = binary_mosaic.ReadAsArray(x_crop, y_crop, iterator_x, iterator_y)
 
-        print(x_crop, y_crop)
 
         return x_crop, y_crop, current_img_in_mosaic
 
@@ -93,8 +86,6 @@ class GdalManipulations:
                 x_crop, y_crop, iterator_x, iterator_y, iterator_recoil, rgba_mosaic
             )
             current_img_in_mosaic = binary_mosaic.ReadAsArray(x_crop, y_crop, iterator_x, iterator_y)
-
-        print(x_crop, y_crop)
 
         return x_crop, y_crop, current_img_in_mosaic
 

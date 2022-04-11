@@ -232,7 +232,7 @@ class Interface(tk.Frame):
 
         self.slider_contourn = tk.Scale(
             self.frame_of_options,
-            from_=0.0,
+            from_=1.0,
             to=100.0,
             command=self.slider_changed_contourn,
             variable=self.current_value_contourn,
@@ -384,8 +384,8 @@ class Interface(tk.Frame):
 
     def slider_changed_contourn(self, event):
         self.slider_pencil = self.current_value_contourn.get()
-        if self.slider_pencil < 10:
-            self.slider_pencil = 10
+        if self.slider_pencil < 1:
+            self.slider_pencil = 1
 
         self.set_slider_contourn.configure(text=self.current_value_contourn.get())
 
@@ -687,7 +687,6 @@ class Interface(tk.Frame):
             for i in range(0, len(self.cnt_validator)):
                 r = cv2.pointPolygonTest(self.contours[i], (self.lasx, self.lasy), False)
                 if r > 0:
-                    print('r :', r, 'i :', i)
                     self.cnt_validator[i] = not self.cnt_validator[i]
                     self.ctn = self.contours[i]
 
@@ -832,15 +831,8 @@ class Interface(tk.Frame):
             if (os.path.getsize("log_progress.txt")) > 0:
                 values = lines.split(",")
                 
-                self.x_crop = float(values[0]) - self.iterator_x
-                self.y_crop = float(values[1]) - self.iterator_y
-                
-                if self.x_crop <= self.iterator_x:
-                    self.x_crop = float(values[0])
-
-                if self.y_crop <= self.iterator_y:
-                    self.y_crop = float(values[1])
-
+                self.x_crop = float(values[0])
+                self.y_crop = float(values[1])
                 self.directory_saved = str(values[2])
 
             bool_check_dir = True

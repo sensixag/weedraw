@@ -7,15 +7,12 @@ class SatureImg:
     def saturation(self, image: list, increment: float) -> list:
         image_hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
         h, s, v = cv2.split(image_hsv)
-        print("smax", s.max())
         if s.max() < 255:
             if increment > 0:
                 s += int(increment)
-                print(increment)
-                print(s.max())
+
 
         elif increment < 0:
-            print("s")
             s -= int(increment)
 
         image_saturated = cv2.merge((h, s, v))
@@ -65,7 +62,6 @@ class ImagesManipulations:
         filter          = cv2.threshold(dots_cpy, 128, 255, cv2.THRESH_BINARY)[1]
         img = cv2.resize(filter, (screen_width, screen_height))
         contours, hier = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        print(len(contours))
 
         for idx, c in enumerate(contours):  # numbers the contours
             self.x_ctn = int(sum(c[:, 0, 0]) / len(c))
