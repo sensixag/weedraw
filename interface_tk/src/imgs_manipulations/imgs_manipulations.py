@@ -132,11 +132,13 @@ class ImagesManipulations:
 
         return union, dif
 
-    def prepare_array(self, img, width, height):
+    def prepare_array(self, img, width, height, modify_array=True):
 
         _img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         _img = cv2.threshold(_img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-        _img = cv2.resize(_img, (width, height), interpolation=cv2.INTER_AREA)
+
+        if modify_array:
+            _img = cv2.resize(_img, (width, height), interpolation=cv2.INTER_AREA)
 
         return _img
 

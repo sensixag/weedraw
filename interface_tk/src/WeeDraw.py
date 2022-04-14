@@ -4,6 +4,9 @@ import pathlib
 import PIL
 import cv2
 import sys
+import math
+import warnings
+
 from tkinter.colorchooser import askcolor
 
 try:
@@ -29,10 +32,11 @@ from PIL import Image, ImageDraw, ImageTk
 from tkinter import filedialog
 from osgeo import gdal, ogr, osr
 
+
 from callbacks_tk import Screen
 from menu import ButtonSettingsLabelling, ButtonsLabelling
 from neural import NeuralFunctions
-from imgs_manipulations import SatureImg, GdalManipulations, Watershed, LoadImagesAnalises
+from imgs_manipulations import *
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
 
@@ -403,7 +407,18 @@ class Interface(tk.Frame):
     def keyboard(self, event):
         self.key_pressed = event.char
         self.key_code = event.keycode
+        if self.key_code == 65:
+            print("ESPACO")
+            self.array_screen_neural = np.asarray(self.screen_main)
+            img = imp.prepare_array(self, self.array_screen_neural, self.screen_width, self.screen_height, False)
 
+            contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
+            print(contours)
+            cv2.fillPoly(self.array_screen_neural, pts=contours, color=(self.color_line_rgb + (self.slider_opacity,)),)
+            self.screen_neural = Image.fromarray(self.array_screen_neural)
+            self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+
+            self.update_img(self.screen_main)
        
     def get_btn(self, event, key):
         self.event_btn = key
@@ -692,11 +707,7 @@ class Interface(tk.Frame):
 
                     if self.cnt_validator[i] == True:
                         cv2.drawContours(self.array_screen_neural, [self.ctn], 0, (self.color_line_rgb + (255,)), 3)
-                        cv2.fillPoly(
-                            self.array_screen_neural,
-                            pts=[self.ctn],
-                            color=(self.color_line_rgb + (self.slider_opacity,)),
-                        )
+                        cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(self.color_line_rgb + (self.slider_opacity,)),)
 
                     elif self.cnt_validator[i] == False:
                         cv2.drawContours(self.array_screen_neural, [self.ctn], 0, (0, 0, 0, 255), 3)
@@ -932,6 +943,7 @@ class Interface(tk.Frame):
 
         self.screen_main, self.draw = Draw().reset_draw_screen(self.screen_main, self.draw, self.screen_width, self.screen_height, option="CLEAN_JUST_OUTLINE_RGB")
 
+
 if __name__ == "__main__":
 
     root = tk.Tk()
@@ -940,5 +952,7 @@ if __name__ == "__main__":
     root.resizable(False, False)
     obj.first_menu(root)
     root.geometry("800x800+50+10")
+    root.rowconfigure(0, weight=1)  
+    root.columnconfigure(0, weight=1)
     root.protocol("WM_DELETE_WINDOW", obj.destroy_aplication)
     root.mainloop()
