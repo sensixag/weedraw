@@ -39,7 +39,7 @@ from neural import NeuralFunctions
 from imgs_manipulations import *
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
-
+from zoom import *
 
 class Interface(tk.Frame):
     def __init__(self, root):
@@ -256,9 +256,10 @@ class Interface(tk.Frame):
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
-        self.canvas = Screen(tk, self.frame_over_center, self.screen_width, self.screen_height).define_canvas()
-
-        self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        #self.canvas = Screen(tk, self.frame_over_center, self.screen_width, self.screen_height).define_canvas()
+        image, _ = self.screen_main, self.draw = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
+        self.canvas_obj = CanvasImage(tk, self.frame_over_center, image)
+        self.canvas = self.canvas_obj.define_canvas()
         self.frame_over_center.pack(expand=1)
 
         self.buttons = ButtonsLabelling(root, tk, self.frame_below_center)
@@ -277,7 +278,6 @@ class Interface(tk.Frame):
         self.button_select_color.configure(bg=self.color_background)
 
         self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
-        self.canvas.pack()
 
         self.current_value_opacity.set(50.0)
         self.current_value_contourn.set(1)
@@ -662,13 +662,11 @@ class Interface(tk.Frame):
         self.first_click = True
         self.update_img(self.img_array_tk)
 
-        self.canvas.bind("<Button-1>", self.get_x_and_y)
-        self.canvas.bind("<Button 3>", self.get_right_click)
-        self.canvas.bind("<B1-Motion>", self.draw_smth)
+        #self.canvas.bind("<Button-1>", self.get_x_and_y)
+        #self.canvas.bind("<Button 3>", self.get_right_click)
+        #self.canvas.bind("<B1-Motion>", self.draw_smth)
         self.frame_root.bind("<KeyPress>", self.keyboard)
-        self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
-
-        self.canvas.pack()
+        #self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
 
     def change_color(self):
         color = askcolor(title="Selecione a cor para utilizar na marcação ")
@@ -761,6 +759,8 @@ class Interface(tk.Frame):
 
         self.image.paste(self.screen_main, (0, 0), self.screen_main)
         self.image_final = ImageTk.PhotoImage(self.image)
+        self.canvas_obj.update_image_canvas()
+        #img = self.canvas_obj.update_image_canvas(self.image_final)
         self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
 
     def load_rgb_tif(self):
@@ -950,7 +950,6 @@ class Interface(tk.Frame):
 
 
 if __name__ == "__main__":
-
     root = tk.Tk()
     obj = Interface(root)
     root.title("WeeDraw")
