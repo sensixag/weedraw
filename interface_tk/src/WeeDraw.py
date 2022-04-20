@@ -277,7 +277,7 @@ class Interface(tk.Frame):
         self.button_select_color.place(relx=0.025, rely=0.375, height=43, width=165)
         self.button_select_color.configure(bg=self.color_background)
 
-        self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
+        #self.img_canvas_id = self.canvas.create_image(0, 0, anchor='nw')
 
         self.current_value_opacity.set(50.0)
         self.current_value_contourn.set(1)
@@ -407,6 +407,13 @@ class Interface(tk.Frame):
     def keyboard(self, event):
         self.key_pressed = event.char
         self.key_code = event.keycode
+        if self.key_pressed == 'x':
+                print('Entrou')
+                self.image = self.image_final
+                self.image = ImageTk.PhotoImage(self.image)
+                self.canvas_obj.update_image_canvas(self.image)
+                #self.canvas.itemconfig(self.img_canvas_id, image=self.image)
+
         if self.key_code == 32 or self.key_code == 65:
             self.array_screen_neural = np.asarray(self.screen_main)
             img = imp.prepare_array(self, self.array_screen_neural, self.screen_width, self.screen_height, False)
@@ -662,11 +669,11 @@ class Interface(tk.Frame):
         self.first_click = True
         self.update_img(self.img_array_tk)
 
-        #self.canvas.bind("<Button-1>", self.get_x_and_y)
-        #self.canvas.bind("<Button 3>", self.get_right_click)
-        #self.canvas.bind("<B1-Motion>", self.draw_smth)
+        self.canvas.bind("<Button-1>", self.get_x_and_y)
+        self.canvas.bind("<Button 3>", self.get_right_click)
+        self.canvas.bind("<B1-Motion>", self.draw_smth)
         self.frame_root.bind("<KeyPress>", self.keyboard)
-        #self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
+        self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
 
     def change_color(self):
         color = askcolor(title="Selecione a cor para utilizar na marcação ")
@@ -759,9 +766,9 @@ class Interface(tk.Frame):
 
         self.image.paste(self.screen_main, (0, 0), self.screen_main)
         self.image_final = ImageTk.PhotoImage(self.image)
-        self.canvas_obj.update_image_canvas()
+        self.canvas_obj.update_image_canvas(self.image_final)
         #img = self.canvas_obj.update_image_canvas(self.image_final)
-        self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
+        #self.canvas.itemconfig(id, image=img)
 
     def load_rgb_tif(self):
 
