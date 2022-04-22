@@ -407,12 +407,6 @@ class Interface(tk.Frame):
     def keyboard(self, event):
         self.key_pressed = event.char
         self.key_code = event.keycode
-        if self.key_pressed == 'x':
-                print('Entrou')
-                self.image = self.image_final
-                self.image = ImageTk.PhotoImage(self.image)
-                self.canvas_obj.update_image_canvas(self.image)
-                #self.canvas.itemconfig(self.img_canvas_id, image=self.image)
 
         if self.key_code == 32 or self.key_code == 65:
             self.array_screen_neural = np.asarray(self.screen_main)
@@ -693,8 +687,8 @@ class Interface(tk.Frame):
         self.update_img(self.screen_main)
 
     def get_x_and_y(self, event):
-        self.lasx, self.lasy = event.x, event.y
-
+        self.lasx, self.lasy = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        print('Weedraw :', self.lasx, self.lasy)
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
             self.draw = Draw().draw_polygon(self.current_points, self.draw, self.color_line_rgb, self.lasx, self.lasy, int(self.current_value_opacity.get()))
@@ -734,7 +728,7 @@ class Interface(tk.Frame):
         self.old_y = self.lasy
 
     def draw_smth(self, event):
-        self.lasx, self.lasy = event.x, event.y
+        self.lasx, self.lasy = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         if self.pencil_draw_bool:
             self.draw = Draw().draw_countour(self.draw, self.color_line_rgb, self.old_x, self.old_y, self.lasx, self.lasy, int(self.current_value_opacity.get()), int(self.slider_pencil))
             self.bool_draw = True
@@ -765,8 +759,8 @@ class Interface(tk.Frame):
         self.image = PIL.Image.fromarray(self.image.copy())
 
         self.image.paste(self.screen_main, (0, 0), self.screen_main)
-        self.image_final = ImageTk.PhotoImage(self.image)
-        self.canvas_obj.update_image_canvas(self.image_final)
+        #self.image_final = ImageTk.PhotoImage(self.image)
+        self.canvas_obj.update_image_canvas(self.image)
         #img = self.canvas_obj.update_image_canvas(self.image_final)
         #self.canvas.itemconfig(id, image=img)
 
