@@ -40,6 +40,7 @@ class CanvasImage:
         # Vertical and horizontal scrollbars for canvas
         self.screen_width = 800
         self.screen_height = 700
+        self.corner_left_img, self.corner_right_img = (0, 0)
         hbar = AutoScrollbar(self.__imframe, orient='horizontal')
         vbar = AutoScrollbar(self.__imframe, orient='vertical')
         hbar.grid(row=1, column=0, sticky='we')
@@ -85,7 +86,7 @@ class CanvasImage:
         # Set ratio coefficient for image pyramid
         self.__ratio = max(self.imwidth, self.imheight) / self.__huge_size if self.__huge else 1.0
         self.__curr_img = 0  # current image from the pyramid
-        self.__scale = self.imscale * self.__ratio  # image pyramide scale
+        self.scale = self.imscale * self.__ratio  # image pyramide scale
         self.__reduction = 2  # reduction degree of image pyramid
         w, h = self.pyramid[-1].size
         while w > 512 and h > 512:  # top pyramid image is around 512 pixels in size
@@ -229,7 +230,6 @@ class CanvasImage:
         y1 = max(box_canvas[1] - box_image[1], 0)
         x2 = min(box_canvas[2], box_image[2]) - box_image[0]
         y2 = min(box_canvas[3], box_image[3]) - box_image[1]
-        print('x1 ,y1 ,x2 ,y2 :', x1 ,y1 ,x2 ,y2)
         if int(x2 - x1) > 0 and int(y2 - y1) > 0:  # show image if it in the visible area
             if self.__huge and self.__curr_img < 0:  # show huge image
                 h = int((y2 - y1) / self.imscale)  # height of the tile band
@@ -240,20 +240,35 @@ class CanvasImage:
                 image = self.image.crop((int(x1 / self.imscale), 0, int(x2 / self.imscale), h))
             else:  # show normal image
                 image = self.pyramid[max(0, self.__curr_img)].crop(  # crop current img from pyramid
-                                    (int(x1 / self.__scale), int(y1 / self.__scale),
-                                     int(x2 / self.__scale), int(y2 / self.__scale)))
-            #
+                                    (int(x1 / self.scale), int(y1 / self.scale),
+                                     int(x2 / self.scale), int(y2 / self.scale)))
+            print('scala', int(x1 / self.scale), int(y1 / self.scale), int(x2 / self.scale), int(y2 / self.scale))
+            print('x :', abs(int(x1 / self.scale) - int(x2 / self.scale)))
+            print('y :', abs(int(y1 / self.scale) - int(y2 / self.scale)))
+            print('multiplicador :', self.scale)
             imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self.filter))
-
+            print('cantos :', max(box_canvas[0], box_img_int[0]), max((box_canvas[1], box_img_int[1])))
             self.canvas.imagetk = imagetk  # keep an extra reference to prevent garbage-collection
-            self.canvas.coords(self.img_canvas_id, (max(box_canvas[0], box_img_int[0]), max((box_canvas[1], box_img_int[1]))))
-            self.canvas.itemconfig(self.img_canvas_id, image=imagetk)
-
+            self.corner_left_img, self.corner_right_img, _ = self.coord_zoom_to_draw((box_canvas[0], box_img_int[0]), (box_canvas[1], box_img_int[1]))
+            
+            self.canvas.coords(self.img_canvas_id, self.corner_left_img, self.corner_right_img)
             self.canvas.itemconfig(self.img_canvas_id, image=imagetk)
 
     def move_from(self, event):
         """ Remember previous coordinates for scrolling with the mouse """
         self.canvas.scan_mark(event.x, event.y)
+
+    def coord_zoom_to_draw(self, left_corner, right_corner):
+        
+        corner_left_img = max(left_corner)
+        corner_right_img = max(right_corner)
+        print(corner_left_img)
+        print(corner_right_img)
+        return corner_left_img, corner_right_img, self.scale
+
+    def get_coord_to_draw(self):
+
+        return self.corner_left_img, self.corner_right_img, self.scale
 
     def move_to(self, event):
         """ Drag (move) canvas to the new position """
@@ -288,7 +303,7 @@ class CanvasImage:
         # Take appropriate image from the pyramid
         k = self.imscale * self.__ratio  # temporary coefficient
         self.__curr_img = min((-1) * int(math.log(k, self.__reduction)), len(self.pyramid) - 1)
-        self.__scale = k * math.pow(self.__reduction, max(0, self.__curr_img))
+        self.scale = k * math.pow(self.__reduction, max(0, self.__curr_img))
         #
         self.canvas.scale('all', x, y, scale, scale)  # rescale all objects
         # Redraw some figures before showing image on the screen

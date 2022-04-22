@@ -687,7 +687,9 @@ class Interface(tk.Frame):
         self.update_img(self.screen_main)
 
     def get_x_and_y(self, event):
-        self.lasx, self.lasy = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        scale = self.canvas_obj.get_coord_to_draw()[2]
+        self.lasx = abs(self.canvas.canvasx(event.x) - self.canvas_obj.get_coord_to_draw()[0]) / scale
+        self.lasy = abs(self.canvas.canvasy(event.y) - self.canvas_obj.get_coord_to_draw()[1]) / scale
         print('Weedraw :', self.lasx, self.lasy)
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
@@ -728,7 +730,9 @@ class Interface(tk.Frame):
         self.old_y = self.lasy
 
     def draw_smth(self, event):
-        self.lasx, self.lasy = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        scale = self.canvas_obj.get_coord_to_draw()[2]
+        self.lasx = abs(self.canvas.canvasx(event.x) - self.canvas_obj.get_coord_to_draw()[0]) / scale
+        self.lasy = abs(self.canvas.canvasy(event.y) - self.canvas_obj.get_coord_to_draw()[1]) / scale
         if self.pencil_draw_bool:
             self.draw = Draw().draw_countour(self.draw, self.color_line_rgb, self.old_x, self.old_y, self.lasx, self.lasy, int(self.current_value_opacity.get()), int(self.slider_pencil))
             self.bool_draw = True
