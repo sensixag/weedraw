@@ -230,6 +230,14 @@ class CanvasImage:
         y1 = max(box_canvas[1] - box_image[1], 0)
         x2 = min(box_canvas[2], box_image[2]) - box_image[0]
         y2 = min(box_canvas[3], box_image[3]) - box_image[1]
+
+        self.upper_left = int(x1 / self.scale)
+        self.upper_right = int(x2 / self.scale)
+        self.bottom_left = int(y1 / self.scale)
+        self.bottom_right = int(y2 / self.scale)
+
+        print(self.upper_left, self.upper_right, self.bottom_left, self.bottom_left)
+
         if int(x2 - x1) > 0 and int(y2 - y1) > 0:  # show image if it in the visible area
             if self.__huge and self.__curr_img < 0:  # show huge image
                 h = int((y2 - y1) / self.imscale)  # height of the tile band
@@ -240,17 +248,17 @@ class CanvasImage:
                 image = self.image.crop((int(x1 / self.imscale), 0, int(x2 / self.imscale), h))
             else:  # show normal image
                 image = self.pyramid[max(0, self.__curr_img)].crop(  # crop current img from pyramid
-                                    (int(x1 / self.scale), int(y1 / self.scale),
-                                     int(x2 / self.scale), int(y2 / self.scale)))
-            print('scala', int(x1 / self.scale), int(y1 / self.scale), int(x2 / self.scale), int(y2 / self.scale))
-            print('x :', abs(int(x1 / self.scale) - int(x2 / self.scale)))
-            print('y :', abs(int(y1 / self.scale) - int(y2 / self.scale)))
+                                    (int(x1 // self.scale), int(y1 / self.scale),
+                                     int(x2 // self.scale), int(y2 / self.scale)))
+            print('_______________________________________________________________________')
+            print('resolucao :', int(x1 / self.scale), int(y1 / self.scale), int(x2 / self.scale), int(y2 / self.scale))
+            print('x, y  :', abs(int(x1 / self.scale) - int(x2 / self.scale)), abs(int(y1 / self.scale) - int(y2 / self.scale)))
             print('multiplicador :', self.scale)
-            imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self.filter))
             print('cantos :', max(box_canvas[0], box_img_int[0]), max((box_canvas[1], box_img_int[1])))
+
+            imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self.filter))
             self.canvas.imagetk = imagetk  # keep an extra reference to prevent garbage-collection
-            self.corner_left_img, self.corner_right_img, _ = self.coord_zoom_to_draw((box_canvas[0], box_img_int[0]), (box_canvas[1], box_img_int[1]))
-            
+            self.corner_left_img, self.corner_right_img, _ = self.coord_zoom_to_draw((box_canvas[0], box_img_int[0]), (box_canvas[1], box_img_int[1]))            
             self.canvas.coords(self.img_canvas_id, self.corner_left_img, self.corner_right_img)
             self.canvas.itemconfig(self.img_canvas_id, image=imagetk)
 
@@ -262,13 +270,40 @@ class CanvasImage:
         
         corner_left_img = max(left_corner)
         corner_right_img = max(right_corner)
-        print(corner_left_img)
-        print(corner_right_img)
+
         return corner_left_img, corner_right_img, self.scale
 
     def get_coord_to_draw(self):
+        if self.corner_left_img > 0 and self.corner_right_img < 0:
+            x_pos = -1*(abs(self.corner_left_img)) + self.scale * self.upper_left
+            y_pos = abs(self.corner_right_img) + self.scale * self.bottom_left
 
-        return self.corner_left_img, self.corner_right_img, self.scale
+        elif self.corner_left_img < 0 and self.corner_right_img > 0:
+            x_pos = abs(self.corner_left_img) + self.scale * self.upper_left
+            y_pos = -1*(abs(self.corner_right_img)) + self.scale * self.bottom_left
+
+        elif self.corner_left_img > 0 and self.corner_right_img > 0:
+            x_pos = abs(self.corner_left_img) + self.scale * self.upper_left
+            y_pos = abs(self.corner_right_img) + self.scale * self.bottom_left
+
+        elif self.corner_left_img < 0 and self.corner_right_img < 0:
+            x_pos = -1*(abs(self.corner_left_img)) + self.scale * self.upper_left
+            y_pos = -1*(abs(self.corner_right_img)) + self.scale * self.bottom_left
+
+        elif self.corner_left_img == 0 and self.corner_right_img == 0:
+            x_pos = self.scale * self.upper_left
+            y_pos = self.scale * self.bottom_left
+
+        else:
+            x_pos = 0
+            y_pos = 0
+            self.scale = 1
+            print('Else')
+            print('x_pos', x_pos)
+            print('y_pos', y_pos)
+            print('scale', self.scale)
+
+        return x_pos, y_pos, self.scale
 
     def move_to(self, event):
         """ Drag (move) canvas to the new position """
@@ -287,7 +322,6 @@ class CanvasImage:
         """ Zoom with mouse wheel """
         x = self.canvas.canvasx(event.x)  # get coordinates of the event on the canvas
         y = self.canvas.canvasy(event.y)
-        print('zoom : ', event.x, event.y, x, y)
         if self.outside(x, y): return  # zoom only inside image area
         scale = 1.0
         # Respond to Linux (event.num) or Windows (event.delta) wheel event

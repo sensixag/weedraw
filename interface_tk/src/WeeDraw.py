@@ -688,9 +688,11 @@ class Interface(tk.Frame):
 
     def get_x_and_y(self, event):
         scale = self.canvas_obj.get_coord_to_draw()[2]
-        self.lasx = abs(self.canvas.canvasx(event.x) - self.canvas_obj.get_coord_to_draw()[0]) / scale
-        self.lasy = abs(self.canvas.canvasy(event.y) - self.canvas_obj.get_coord_to_draw()[1]) / scale
-        print('Weedraw :', self.lasx, self.lasy)
+        self.lasx = abs((self.canvas.canvasx(event.x)) + self.canvas_obj.get_coord_to_draw()[0]) / scale
+        self.lasy = abs((self.canvas.canvasy(event.y)) + self.canvas_obj.get_coord_to_draw()[1]) / scale
+        print('Weedraw (x, y) :', self.canvas.canvasx(event.x), self.canvas.canvasy(event.y))
+        print('Weedraw Ajustado (x, y) :', self.lasx ,self.lasy)
+        
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
             self.draw = Draw().draw_polygon(self.current_points, self.draw, self.color_line_rgb, self.lasx, self.lasy, int(self.current_value_opacity.get()))
@@ -731,8 +733,8 @@ class Interface(tk.Frame):
 
     def draw_smth(self, event):
         scale = self.canvas_obj.get_coord_to_draw()[2]
-        self.lasx = abs(self.canvas.canvasx(event.x) - self.canvas_obj.get_coord_to_draw()[0]) / scale
-        self.lasy = abs(self.canvas.canvasy(event.y) - self.canvas_obj.get_coord_to_draw()[1]) / scale
+        self.lasx = abs((self.canvas.canvasx(event.x)) + self.canvas_obj.get_coord_to_draw()[0]) / scale
+        self.lasy = abs((self.canvas.canvasy(event.y)) + self.canvas_obj.get_coord_to_draw()[1]) / scale
         if self.pencil_draw_bool:
             self.draw = Draw().draw_countour(self.draw, self.color_line_rgb, self.old_x, self.old_y, self.lasx, self.lasy, int(self.current_value_opacity.get()), int(self.slider_pencil))
             self.bool_draw = True
