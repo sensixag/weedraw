@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Advanced zoom for images of various types from small to huge up to several GB
 import math
 import numpy as np
 import imgaug as im
@@ -32,49 +31,44 @@ class CanvasImage:
         self.imscale = 1.0  # scale for the canvas image zoom, public for outer classes
         self.__delta = 1.3  # zoom magnitude
         self.filter = Image.ANTIALIAS  # could be: NEAREST, BILINEAR, BICUBIC and ANTIALIAS
-        self.__previous_state = 0  # previous state of the keyboard
         self.tk_menu = tk_menu
-        self.image_original = image  # path to the image, should be public for outer classes
-        # Create ImageFrame in placeholder widget
-        self.__imframe = placeholder  # placeholder of the ImageFrame object
-        # Vertical and horizontal scrollbars for canvas
+        self.image_original = image  
+        self.__imframe = placeholder
         self.screen_width = 800
         self.screen_height = 700
+        self.__previous_state = 0  # previous state of the keyboard
         self.corner_left_img, self.corner_right_img = (0, 0)
         hbar = AutoScrollbar(self.__imframe, orient='horizontal')
         vbar = AutoScrollbar(self.__imframe, orient='vertical')
         hbar.grid(row=1, column=0, sticky='we')
         vbar.grid(row=0, column=1, sticky='ns')
-        # Create canvas and bind it with scrollbars. Public for outer classes
+
         self.canvas = self.tk_menu.Canvas(self.__imframe, highlightthickness=0,
                                           xscrollcommand=hbar.set, yscrollcommand=vbar.set, 
                                           bd=0, width=self.screen_width, height=self.screen_height,)
         self.canvas.grid(row=0, column=0, sticky='nswe')
-        self.canvas.update()  # wait till canvas is created
-        hbar.configure(command=self.scroll_x)  # bind scrollbars to the canvas
+        self.canvas.update()
+        hbar.configure(command=self.scroll_x)
         vbar.configure(command=self.scroll_y)
-        # Bind events to the Canvas
-        self.canvas.bind('<Configure>', lambda event: self.show_image())  # canvas is resized
-        self.canvas.bind('<ButtonPress-1>', self.move_from)  # remember canvas position
-        self.canvas.bind('<B1-Motion>',     self.move_to)  # move canvas to the new position
-        self.canvas.bind('<MouseWheel>', self.wheel)  # zoom for Windows and MacOS, but not Linux
-        self.canvas.bind('<Button-5>',   self.wheel)  # zoom for Linux, wheel scroll down
-        self.canvas.bind('<Button-4>',   self.wheel)  # zoom for Linux, wheel scroll up
-        # Handle keystrokes in idle mode, because program slows down on a weak computers,
-        # when too many key stroke events in the same time
+        self.canvas.bind('<Configure>', lambda event: self.show_image())  
+        self.canvas.bind('<ButtonPress-1>', self.move_from)  
+        self.canvas.bind('<B1-Motion>',     self.move_to)
+        self.canvas.bind('<MouseWheel>', self.wheel)
+        self.canvas.bind('<Button-5>',   self.wheel)
+        self.canvas.bind('<Button-4>',   self.wheel)
         self.canvas.bind('<Key>', lambda event: self.canvas.after_idle(self.__keystroke, event))
-        # Decide if this image huge or not
-        self.__huge = False  # huge or not
-        self.__huge_size = 14000  # define size of the huge image
-        self.__band_width = 1024  # width of the tile band
-        Image.MAX_IMAGE_PIXELS = 1000000000  # suppress DecompressionBombError for the big image
-        with warnings.catch_warnings():  # suppress DecompressionBombWarning
+
+        self.__huge = False
+        self.__huge_size = 14000
+        self.__band_width = 1024
+        Image.MAX_IMAGE_PIXELS = 1000000000
+        with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            self.image = self.image_original.copy()  # open image, but down't load it
-        self.imwidth, self.imheight = self.image.size  # public for outer classes
+            self.image = self.image_original.copy() 
+        self.imwidth, self.imheight = self.image.size
         if self.imwidth * self.imheight > self.__huge_size * self.__huge_size and \
-           self.image.tile[0][0] == 'raw':  # only raw images could be tiled
-            self.__huge = True  # image is huge
+           self.image.tile[0][0] == 'raw':
+            self.__huge = True
             self.__offset = self.image.tile[0][2]  # initial tile offset
             self.__tile = [self.image.tile[0][0],  # it have to be 'raw'
                            [0, 0, self.imwidth, 0],  # tile extent (a rectangle)
@@ -94,13 +88,31 @@ class CanvasImage:
             h /= self.__reduction  # divide on reduction degree
             self.pyramid.append(self.pyramid[-1].resize((int(w), int(h)), self.filter))
         # Put image into container rectangle and use it to set proper coordinates to the image
-        self.container = self.canvas.create_rectangle((0, 0, self.imwidth, self.imheight), width=0)
+        self.container = self.canvas.create_rectangle((0, 0, 800, 700), width=0)
         self.img_canvas_id = self.canvas.create_image(0, 0, anchor='nw')
         self.canvas.lower(self.img_canvas_id)  # set image into background
         
         self.show_image()  # show image on the canvas
         self.canvas.focus_set()  # set focus on the canvas
 
+
+    def __keystroke(self, event):
+        """ Scrolling with the keyboard.
+            Independent from the language of the keyboard, CapsLock, <Ctrl>+<key>, etc. """
+        if event.state - self.__previous_state == 4:  # means that the Control key is pressed
+            #self.canvas.scan_dragto(event.x, event.y, gain=1)
+            #self.__show_image()
+            pass  # do nothing if Control key is pressed
+        # else:
+        #     print('event.keycode', event.keycode)
+        #     if event.keycode in [64, 25, 102]:  # scroll right: keys 'S', 'Up' or 'Numpad-6'
+        #         self.scroll_y('scroll',  1, 'unit', event=event)
+        #     elif event.keycode in [65, 37, 100]:  # scroll left: keys 'W', 'Down' or 'Numpad-4'
+        #         self.scroll_y('scroll', -1, 'unit', event=event)
+        #     elif event.keycode in [87, 38, 104]:  # scroll up: keys 'A', 'Left' or 'Numpad-8'
+        #         self.scroll_x('scroll', -1, 'unit', event=event)
+        #     elif event.keycode in [83, 40, 98]:  # scroll down: keys 'D', 'Right' or 'Numpad-2'
+        #         self.scroll_x('scroll',  1, 'unit', event=event)
 
     def define_canvas(self):
         return self.canvas
@@ -226,6 +238,7 @@ class CanvasImage:
             box_scroll[3]  = box_img_int[3]
         # Convert scroll region to tuple and to integer
         self.canvas.configure(scrollregion=tuple(map(int, box_scroll)))  # set scroll region
+
         x1 = max(box_canvas[0] - box_image[0], 0)  # get coordinates (x1,y1,x2,y2) of the image tile
         y1 = max(box_canvas[1] - box_image[1], 0)
         x2 = min(box_canvas[2], box_image[2]) - box_image[0]
@@ -250,12 +263,7 @@ class CanvasImage:
                 image = self.pyramid[max(0, self.__curr_img)].crop(  # crop current img from pyramid
                                     (int(x1 // self.scale), int(y1 / self.scale),
                                      int(x2 // self.scale), int(y2 / self.scale)))
-            print('_______________________________________________________________________')
-            print('resolucao :', int(x1 / self.scale), int(y1 / self.scale), int(x2 / self.scale), int(y2 / self.scale))
-            print('x, y  :', abs(int(x1 / self.scale) - int(x2 / self.scale)), abs(int(y1 / self.scale) - int(y2 / self.scale)))
-            print('multiplicador :', self.scale)
-            print('cantos :', max(box_canvas[0], box_img_int[0]), max((box_canvas[1], box_img_int[1])))
-
+     
             imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self.filter))
             self.canvas.imagetk = imagetk  # keep an extra reference to prevent garbage-collection
             self.corner_left_img, self.corner_right_img, _ = self.coord_zoom_to_draw((box_canvas[0], box_img_int[0]), (box_canvas[1], box_img_int[1]))            
@@ -270,15 +278,16 @@ class CanvasImage:
         
         corner_left_img = max(left_corner)
         corner_right_img = max(right_corner)
-
+        print('corners: ', corner_left_img, corner_right_img)
         return corner_left_img, corner_right_img, self.scale
 
     def get_coord_to_draw(self):
-        if self.corner_left_img > 0 and self.corner_right_img < 0:
+
+        if self.corner_left_img >= 0 and self.corner_right_img <= 0:
             x_pos = -1*(abs(self.corner_left_img)) + self.scale * self.upper_left
             y_pos = abs(self.corner_right_img) + self.scale * self.bottom_left
 
-        elif self.corner_left_img < 0 and self.corner_right_img > 0:
+        elif self.corner_left_img <= 0 and self.corner_right_img >= 0:
             x_pos = abs(self.corner_left_img) + self.scale * self.upper_left
             y_pos = -1*(abs(self.corner_right_img)) + self.scale * self.bottom_left
 
@@ -313,6 +322,7 @@ class CanvasImage:
     def outside(self, x, y):
         """ Checks if the point (x,y) is outside the image area """
         bbox = self.canvas.coords(self.container)  # get image area
+        print(bbox)
         if bbox[0] < x < bbox[2] and bbox[1] < y < bbox[3]:
             return False  # point (x,y) is inside the image area
         else:
@@ -326,7 +336,10 @@ class CanvasImage:
         scale = 1.0
         # Respond to Linux (event.num) or Windows (event.delta) wheel event
         if event.num == 5 or event.delta == -120:  # scroll down, smaller
-            if round(self.__min_side * self.imscale) < 30: return  # image is less than 30 pixels
+            if round(self.__min_side * self.imscale) < 800: 
+               
+                return  # image is less than 30 pixels
+
             self.imscale /= self.__delta
             scale        /= self.__delta
         if event.num == 4 or event.delta == 120:  # scroll up, bigger
@@ -343,23 +356,6 @@ class CanvasImage:
         # Redraw some figures before showing image on the screen
         self.redraw_figures()  # method for child classes
         self.show_image()
-
-    def __keystroke(self, event):
-        """ Scrolling with the keyboard.
-            Independent from the language of the keyboard, CapsLock, <Ctrl>+<key>, etc. """
-        if event.state - self.__previous_state == 4:  # means that the Control key is pressed
-            pass  # do nothing if Control key is pressed
-        else:
-            self.__previous_state = event.state  # remember the last keystroke state
-            # Up, Down, Left, Right keystrokes
-            if event.keycode in [68, 39, 102]:  # scroll right: keys 'D', 'Right' or 'Numpad-6'
-                self.scroll_x('scroll',  1, 'unit', event=event)
-            elif event.keycode in [65, 37, 100]:  # scroll left: keys 'A', 'Left' or 'Numpad-4'
-                self.scroll_x('scroll', -1, 'unit', event=event)
-            elif event.keycode in [87, 38, 104]:  # scroll up: keys 'W', 'Up' or 'Numpad-8'
-                self.scroll_y('scroll', -1, 'unit', event=event)
-            elif event.keycode in [83, 40, 98]:  # scroll down: keys 'S', 'Down' or 'Numpad-2'
-                self.scroll_y('scroll',  1, 'unit', event=event)
 
     def crop(self, bbox):
         """ Crop rectangle from the image and return it """

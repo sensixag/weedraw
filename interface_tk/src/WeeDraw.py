@@ -692,7 +692,7 @@ class Interface(tk.Frame):
         self.lasy = abs((self.canvas.canvasy(event.y)) + self.canvas_obj.get_coord_to_draw()[1]) / scale
         print('Weedraw (x, y) :', self.canvas.canvasx(event.x), self.canvas.canvasy(event.y))
         print('Weedraw Ajustado (x, y) :', self.lasx ,self.lasy)
-        
+
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
             self.draw = Draw().draw_polygon(self.current_points, self.draw, self.color_line_rgb, self.lasx, self.lasy, int(self.current_value_opacity.get()))
@@ -963,7 +963,7 @@ if __name__ == "__main__":
     root.resizable(False, False)
     obj.first_menu(root)
     root.geometry("800x800+50+10")
-    root.rowconfigure(0, weight=1)  
-    root.columnconfigure(0, weight=1)
+    root.rowconfigure(0, weight=0)  
+    root.columnconfigure(0, weight=0)
     root.protocol("WM_DELETE_WINDOW", obj.destroy_aplication)
     root.mainloop()
