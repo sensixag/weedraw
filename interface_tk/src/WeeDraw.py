@@ -35,7 +35,7 @@ from neural import NeuralFunctions
 from imgs_manipulations import SatureImg, GdalManipulations, Watershed, LoadImagesAnalises
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
-
+from utils import LogCustom
 
 class Interface(tk.Frame):
     def __init__(self, root):
@@ -845,14 +845,17 @@ class Interface(tk.Frame):
 
         return bool_check_dir
 
-    def destroy_aplication(self):
-
+    def save_progress(self):
         if self.x_crop >= 0 and self.y_crop >= 0:
-            string_text = str(self.x_crop) + "," + str(self.y_crop) + "," + str(self.name_tif) + ", \n"
+            log_custom = LogCustom().register_log()
+            string_text = str(self.x_crop) + "," + str(self.y_crop) + "," + str(self.name_tif) + "," + str(log_custom)
             with open("log_progress.txt", "ab") as f:
                 f.write(string_text.encode("utf-8", "ignore"))
-        root.destroy()
 
+    def destroy_aplication(self):
+        if self.user_choosed != 'ANALISES':
+            self.save_progress()
+            root.destroy()
 
     def eliminate_invalidated_contourns(self):
         self.array_screen_neural = np.array(self.screen_neural)
@@ -892,6 +895,7 @@ class Interface(tk.Frame):
         if self.user_choosed == 'DRAW':
             #self.eliminate_invalidated_contourns()
             self.cnt_validator = []
+            self.save_progress()
 
             if self.polygon_draw_bool:
                 self.current_points.clear()
