@@ -413,7 +413,6 @@ class Interface(tk.Frame):
             img = imp.prepare_array(self, self.array_screen_neural, self.screen_width, self.screen_height, False)
 
             contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
-            print(contours)
             cv2.fillPoly(self.array_screen_neural, pts=contours, color=(self.color_line_rgb + (self.slider_opacity,)),)
             self.screen_neural = Image.fromarray(self.array_screen_neural)
             self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
@@ -450,10 +449,9 @@ class Interface(tk.Frame):
             self.opacity = not self.opacity
             if self.opacity:
                 option_img = "normal"
-                self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
-
+                self.canvas_obj.show(self.image_final)
             else:
-                self.canvas.itemconfig(self.img_canvas_id, image=self.image_tk)
+                self.canvas_obj.show(self.image_tk)
 
         elif key == "9":
             self.pencil_draw_bool = False
@@ -690,8 +688,6 @@ class Interface(tk.Frame):
         scale = self.canvas_obj.get_coord_to_draw()[2]
         self.lasx = abs((self.canvas.canvasx(event.x)) + self.canvas_obj.get_coord_to_draw()[0]) / scale
         self.lasy = abs((self.canvas.canvasy(event.y)) + self.canvas_obj.get_coord_to_draw()[1]) / scale
-        print('Weedraw (x, y) :', self.canvas.canvasx(event.x), self.canvas.canvasy(event.y))
-        print('Weedraw Ajustado (x, y) :', self.lasx ,self.lasy)
 
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
@@ -765,11 +761,9 @@ class Interface(tk.Frame):
         self.image = PIL.Image.fromarray(self.image.copy())
 
         self.image.paste(self.screen_main, (0, 0), self.screen_main)
-        #self.image_final = ImageTk.PhotoImage(self.image)
+        self.image_final = ImageTk.PhotoImage(self.image)
         self.canvas_obj.update_image_canvas(self.image)
-        #img = self.canvas_obj.update_image_canvas(self.image_final)
-        #self.canvas.itemconfig(id, image=img)
-
+     
     def load_rgb_tif(self):
 
         path_rgb_shp = filedialog.askopenfilename(title="Selecione O Mosaico")
