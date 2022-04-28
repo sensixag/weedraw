@@ -564,12 +564,7 @@ class Interface(tk.Frame):
             self.save_draws()
         
         if self.user_choosed == "DRAW":
-            
-            if self.x_crop >= 0 and self.y_crop >= 0:
-                string_text = str(self.x_crop) + "," + str(self.y_crop) + "," + str(self.name_tif) + ", \n"
-                with open("log_progress.txt", "ab") as f:
-                    f.write(string_text.encode("utf-8", "ignore"))
-
+        
             if key == "1":
                 self.bool_draw = True
                 self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1)
