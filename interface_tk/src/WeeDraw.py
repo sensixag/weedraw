@@ -4,6 +4,9 @@ import pathlib
 import PIL
 import cv2
 import sys
+import math
+import warnings
+
 from tkinter.colorchooser import askcolor
 
 try:
@@ -29,12 +32,14 @@ from PIL import Image, ImageDraw, ImageTk
 from tkinter import filedialog
 from osgeo import gdal, ogr, osr
 
+
 from callbacks_tk import Screen
 from menu import ButtonSettingsLabelling, ButtonsLabelling
 from neural import NeuralFunctions
-from imgs_manipulations import SatureImg, GdalManipulations, Watershed, LoadImagesAnalises
+from imgs_manipulations import *
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
+from zoom import *
 from utils import LogCustom
 
 class Interface(tk.Frame):
@@ -252,9 +257,10 @@ class Interface(tk.Frame):
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
-        self.canvas = Screen(tk, self.frame_over_center, self.screen_width, self.screen_height).define_canvas()
-
-        self.canvas.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        #self.canvas = Screen(tk, self.frame_over_center, self.screen_width, self.screen_height).define_canvas()
+        image, _ = self.screen_main, self.draw = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
+        self.canvas_obj = CanvasImage(tk, self.frame_over_center, image)
+        self.canvas = self.canvas_obj.define_canvas()
         self.frame_over_center.pack(expand=1)
 
         self.buttons = ButtonsLabelling(root, tk, self.frame_below_center)
@@ -272,8 +278,7 @@ class Interface(tk.Frame):
         self.button_select_color.place(relx=0.025, rely=0.375, height=43, width=165)
         self.button_select_color.configure(bg=self.color_background)
 
-        self.img_canvas_id = self.canvas.create_image(self.screen_width // 2, self.screen_height // 2, anchor=tk.CENTER)
-        self.canvas.pack()
+        #self.img_canvas_id = self.canvas.create_image(0, 0, anchor='nw')
 
         self.current_value_opacity.set(50.0)
         self.current_value_contourn.set(1)
@@ -404,6 +409,16 @@ class Interface(tk.Frame):
         self.key_pressed = event.char
         self.key_code = event.keycode
 
+        if self.key_code == 32 or self.key_code == 65:
+            self.array_screen_neural = np.asarray(self.screen_main)
+            img = imp.prepare_array(self, self.array_screen_neural, self.screen_width, self.screen_height, False)
+
+            contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
+            cv2.fillPoly(self.array_screen_neural, pts=contours, color=(self.color_line_rgb + (self.slider_opacity,)),)
+            self.screen_neural = Image.fromarray(self.array_screen_neural)
+            self.screen_main.paste(self.screen_neural, (0, 0), self.screen_neural)
+
+            self.update_img(self.screen_main)
        
     def get_btn(self, event, key):
         self.event_btn = key
@@ -435,10 +450,9 @@ class Interface(tk.Frame):
             self.opacity = not self.opacity
             if self.opacity:
                 option_img = "normal"
-                self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
-
+                self.canvas_obj.show(self.image_final)
             else:
-                self.canvas.itemconfig(self.img_canvas_id, image=self.image_tk)
+                self.canvas_obj.show(self.image_tk)
 
         elif key == "9":
             self.pencil_draw_bool = False
@@ -550,6 +564,12 @@ class Interface(tk.Frame):
             self.save_draws()
         
         if self.user_choosed == "DRAW":
+            
+            if self.x_crop >= 0 and self.y_crop >= 0:
+                string_text = str(self.x_crop) + "," + str(self.y_crop) + "," + str(self.name_tif) + ", \n"
+                with open("log_progress.txt", "ab") as f:
+                    f.write(string_text.encode("utf-8", "ignore"))
+
             if key == "1":
                 self.bool_draw = True
                 self.x_crop, self.y_crop, self.daninha_parcela = GdalManipulations().load_next_img_in_mosaic(self.x_crop, self.y_crop, self.iterator_x, self.iterator_y, self.background_percent, self.iterator_recoil, self.mosaico, self.daninha_band_1)
@@ -648,8 +668,6 @@ class Interface(tk.Frame):
         self.frame_root.bind("<KeyPress>", self.keyboard)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
 
-        self.canvas.pack()
-
     def change_color(self):
         color = askcolor(title="Selecione a cor para utilizar na marcação ")
         self.color_line_rgb = color[0]
@@ -668,7 +686,9 @@ class Interface(tk.Frame):
         self.update_img(self.screen_main)
 
     def get_x_and_y(self, event):
-        self.lasx, self.lasy = event.x, event.y
+        scale = self.canvas_obj.get_coord_to_draw()[2]
+        self.lasx = abs((self.canvas.canvasx(event.x)) + self.canvas_obj.get_coord_to_draw()[0]) / scale
+        self.lasy = abs((self.canvas.canvasy(event.y)) + self.canvas_obj.get_coord_to_draw()[1]) / scale
 
         if self.polygon_draw_bool:
             self.current_points.append((self.lasx, self.lasy))
@@ -692,11 +712,7 @@ class Interface(tk.Frame):
 
                     if self.cnt_validator[i] == True:
                         cv2.drawContours(self.array_screen_neural, [self.ctn], 0, (self.color_line_rgb + (255,)), 3)
-                        cv2.fillPoly(
-                            self.array_screen_neural,
-                            pts=[self.ctn],
-                            color=(self.color_line_rgb + (self.slider_opacity,)),
-                        )
+                        cv2.fillPoly(self.array_screen_neural, pts=[self.ctn], color=(self.color_line_rgb + (self.slider_opacity,)),)
 
                     elif self.cnt_validator[i] == False:
                         cv2.drawContours(self.array_screen_neural, [self.ctn], 0, (0, 0, 0, 255), 3)
@@ -713,7 +729,9 @@ class Interface(tk.Frame):
         self.old_y = self.lasy
 
     def draw_smth(self, event):
-        self.lasx, self.lasy = event.x, event.y
+        scale = self.canvas_obj.get_coord_to_draw()[2]
+        self.lasx = abs((self.canvas.canvasx(event.x)) + self.canvas_obj.get_coord_to_draw()[0]) / scale
+        self.lasy = abs((self.canvas.canvasy(event.y)) + self.canvas_obj.get_coord_to_draw()[1]) / scale
         if self.pencil_draw_bool:
             self.draw = Draw().draw_countour(self.draw, self.color_line_rgb, self.old_x, self.old_y, self.lasx, self.lasy, int(self.current_value_opacity.get()), int(self.slider_pencil))
             self.bool_draw = True
@@ -745,8 +763,8 @@ class Interface(tk.Frame):
 
         self.image.paste(self.screen_main, (0, 0), self.screen_main)
         self.image_final = ImageTk.PhotoImage(self.image)
-        self.canvas.itemconfig(self.img_canvas_id, image=self.image_final)
-
+        self.canvas_obj.update_image_canvas(self.image)
+     
     def load_rgb_tif(self):
 
         path_rgb_shp = filedialog.askopenfilename(title="Selecione O Mosaico")
@@ -936,13 +954,15 @@ class Interface(tk.Frame):
 
         self.screen_main, self.draw = Draw().reset_draw_screen(self.screen_main, self.draw, self.screen_width, self.screen_height, option="CLEAN_JUST_OUTLINE_RGB")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     root = tk.Tk()
     obj = Interface(root)
     root.title("WeeDraw")
     root.resizable(False, False)
     obj.first_menu(root)
     root.geometry("800x800+50+10")
+    root.rowconfigure(0, weight=0)  
+    root.columnconfigure(0, weight=0)
     root.protocol("WM_DELETE_WINDOW", obj.destroy_aplication)
     root.mainloop()
