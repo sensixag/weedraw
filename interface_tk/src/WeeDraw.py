@@ -88,6 +88,7 @@ class Interface(tk.Frame):
         self.bool_draw = False
         self.delete_contourn = False
         self.use_neural_network = False
+        self.eliminate_irrelevant_cnts = True
         self.path_save_img_rgb = "dataset/rgb"
         self.path_save_img_bin = "dataset/binario"
         self.path_save_img_negative = "dataset/negativos"
@@ -582,6 +583,8 @@ class Interface(tk.Frame):
                 self.validate_contorn = True
                 self.array_screen_neural = np.array(self.screen_neural)
                 img = self.neural_network.predict_image(self.imgparcela)
+                if self.eliminate_irrelevant_cnts:
+                    img = imp.adjust_pixels(self, img, 20)
                 if self.option_of_draw == "CNT":
                     self.contours = imp.find_contourns(self, img, self.screen_width, self.screen_height)
                     cv2.drawContours(self.array_screen_neural, self.contours, -1, (self.color_line_rgb + (255,)), 2)
@@ -875,7 +878,7 @@ class Interface(tk.Frame):
 
         for i in range(len(self.cnt_validator)):
             if self.cnt_validator[i] == True:
-                cv2.drawContours(self.array_screen_neural, self.contours[i], -1, (0, 0, 0, 255), 5)
+                cv2.drawContours(self.array_screen_neural, self.contours[i], -1, (0, 0, 0, 255), 3)
                 cv2.fillPoly(self.array_screen_neural, pts=[self.contours[i]], color=(0, 0, 0, 255))
             
                 self.screen_neural = Image.fromarray(self.array_screen_neural)
