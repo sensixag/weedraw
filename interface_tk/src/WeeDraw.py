@@ -5,6 +5,7 @@ import PIL
 import cv2
 import sys
 import math
+import time
 import warnings
 
 from tkinter.colorchooser import askcolor
@@ -374,15 +375,14 @@ class Interface(tk.Frame):
     # Metodos para receber os valores do slider de saturação
     def get_current_value_saturation(self):
         self.slider_saturation = int(self.current_value_saturation.get())
+        print(self.slider_saturation)
         if self.bool_draw:
-            self.image_down = SatureImg().saturation(
-                self.image_down, self.slider_saturation - self.slider_saturation_old
-            )
+            self.image_down = SatureImg().saturation(self.imgparcela, increment=self.slider_saturation)
 
-            if self.slider_saturation <= 10:
-                self.image_down = self.imgparcela.copy()
+        if self.slider_saturation <= 10:
+            self.image_down = self.imgparcela.copy()
 
-            self.update_img(self.screen_main)
+        self.update_img(self.screen_main)
         self.slider_saturation_old = self.slider_saturation
 
     def slider_changed_saturation(self, event):

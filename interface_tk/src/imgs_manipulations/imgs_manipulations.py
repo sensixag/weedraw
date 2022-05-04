@@ -10,11 +10,7 @@ class SatureImg:
         if s.max() < 255:
             if increment > 0:
                 s += int(increment)
-
-
-        elif increment < 0:
-            s -= int(increment)
-
+            
         image_saturated = cv2.merge((h, s, v))
         image_saturated = cv2.cvtColor(image_saturated, cv2.COLOR_HSV2RGB)
 
