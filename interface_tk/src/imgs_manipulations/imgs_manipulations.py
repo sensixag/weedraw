@@ -10,11 +10,7 @@ class SatureImg:
         if s.max() < 255:
             if increment > 0:
                 s += int(increment)
-
-
-        elif increment < 0:
-            s -= int(increment)
-
+            
         image_saturated = cv2.merge((h, s, v))
         image_saturated = cv2.cvtColor(image_saturated, cv2.COLOR_HSV2RGB)
 
@@ -56,11 +52,7 @@ class LoadImagesAnalises:
 
 class ImagesManipulations:
     def find_contourns(self, img, screen_width, screen_height):
-        dots            = cv2.GaussianBlur(img, (21, 21), 0)
-        dots_cpy       = cv2.erode(dots, (3, 3))
-        dots_cpy        = cv2.dilate(dots_cpy, None, iterations=1)
-        filter          = cv2.threshold(dots_cpy, 128, 255, cv2.THRESH_BINARY)[1]
-        img = cv2.resize(filter, (screen_width, screen_height))
+        img = cv2.resize(img, (screen_width, screen_height))
         contours, hier = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
         for idx, c in enumerate(contours):  # numbers the contours
@@ -132,12 +124,17 @@ class ImagesManipulations:
 
         return union, dif
 
-    def prepare_array(self, img, width, height):
+    def prepare_array(self, img, width, height, modify_array=True):
 
         _img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         _img = cv2.threshold(_img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-        _img = cv2.resize(_img, (width, height), interpolation=cv2.INTER_AREA)
 
+        if modify_array:
+            _img = cv2.resize(_img, (width, height), interpolation=cv2.INTER_AREA)
+
+        _img[_img <= 128] = 0
+        _img[_img > 128] = 255
+        
         return _img
 
     def gray_to_rgba(self, img):
