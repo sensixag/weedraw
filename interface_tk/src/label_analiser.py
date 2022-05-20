@@ -4,7 +4,6 @@ import pathlib
 import PIL
 import cv2
 import sys
-import math
 import time
 import warnings
 
@@ -18,7 +17,6 @@ from imgs_manipulations import *
 from imgs_manipulations import ImagesManipulations as imp
 from draw import Draw
 from zoom import *
-from utils import LogCustom
 
 class LabelAnaliser(tk.Frame):
     def __init__(self, root):
@@ -191,11 +189,8 @@ class LabelAnaliser(tk.Frame):
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
-        self.button_save_image = tk.Checkbutton(
-            self.frame_of_options, text="Salvar Modificações ", variable=self.bool_save_image, onvalue=1, offvalue=0,
-        )
-        self.button_save_image.place(x=20, y=320)
-
+        self.button_save_image = tk.Checkbutton(self.frame_of_options, text="Salvar Modificações ", variable=self.bool_save_image, onvalue=1, offvalue=0, background=self.color_frame_options, bg='white')
+        self.button_save_image.place(x=20, y=320, width=165)
 
         #self.canvas = Screen(tk, self.frame_over_center, self.screen_width, self.screen_height).define_canvas()
         image, _ = self.screen_main, self.draw = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
@@ -214,9 +209,9 @@ class LabelAnaliser(tk.Frame):
         self.buttons.next_btn.bind("<Button-1>", partial(self.get_btn, key="Next"))
         self.buttons.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
-        self.button_select_color = tk.Button(root, text="Cor para marcação", command=self.change_color, fg="white")
+        self.button_select_color = tk.Button(root, text="Cor para marcação", command=self.change_color)
         self.button_select_color.place(relx=0.025, rely=0.375, height=43, width=165)
-        self.button_select_color.configure(bg=self.color_background)
+        self.button_select_color.configure(bg='white')
 
         #self.img_canvas_id = self.canvas.create_image(0, 0, anchor='nw')
 
