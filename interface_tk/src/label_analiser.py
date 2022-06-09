@@ -233,6 +233,7 @@ class LabelAnaliser(tk.Frame):
         self.buttons.polygon_btn.bind("<Button-1>", partial(self.get_btn, key="9"))
         self.buttons.hide_layer_btn.bind("<Button-1>", partial(self.get_btn, key="8"))
         self.buttons.super_pixel_btn.bind("<Button-1>", partial(self.get_btn, key="10"))
+        self.buttons.close_btn.bind("<Button-1>", partial(self.get_btn, key="Close"))
         self.buttons.next_btn.bind("<Button-1>", partial(self.get_btn, key="Next"))
         self.buttons.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
@@ -275,7 +276,8 @@ class LabelAnaliser(tk.Frame):
             if key == "1":
                 self.bool_draw = True
                 self.current_bin_name = self.imgs_bin_array[self.change_imgs]
-                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.current_rgb_name = self.imgs_rgb_array[self.change_imgs]
+                self.imgparcela = cv2.imread(self.current_rgb_name)
                 self.img_bin = cv2.imread(self.current_bin_name)
                 self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
 
@@ -308,7 +310,9 @@ class LabelAnaliser(tk.Frame):
                     self.change_imgs -=1
 
                 self.current_bin_name = self.imgs_bin_array[self.change_imgs]
-                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.current_rgb_name = self.imgs_rgb_array[self.change_imgs]                
+                
+                self.imgparcela = cv2.imread(self.current_rgb_name)
                 self.img_bin = cv2.imread(self.current_bin_name)
                 self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
 
@@ -453,7 +457,24 @@ class LabelAnaliser(tk.Frame):
         self.image_final = ImageTk.PhotoImage(self.image)
         self.canvas_obj.update_image_canvas(self.image)
 
+    def remove_current_img(self, remove_img):
+        if remove_img:
+            print(self.imgs_bin_array[self.change_imgs])
+            os.system('rm ' + str(self.current_bin_name))
+            os.system('rm ' + str(self.current_rgb_name))
+            tk.messagebox.showinfo(message="Imagem Excluida!!")
+            self.imgs_rgb_array.remove(self.current_rgb_name)
+            self.imgs_bin_array.remove(self.current_bin_name)
+
+        else:
+            tk.messagebox.showinfo(message="Imagem não Excluida")
+
     def get_btn(self, event, key):
+        if key == "Close":
+            print("Close")
+            remove_img_answer = tk.messagebox.askquestion("Excluir Imagem?", "Você quer realmente excluir esta imagem?")
+            self.remove_current_img(remove_img_answer)
+
         if key == "6":
             self.pencil_draw_bool = True
             self.polygon_draw_bool = False
