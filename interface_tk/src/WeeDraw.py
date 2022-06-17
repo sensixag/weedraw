@@ -35,6 +35,7 @@ from osgeo import gdal, ogr, osr
 
 
 from callbacks_tk import Screen
+from callbacks_tk import KeyTracker
 from menu import ButtonSettingsLabelling, ButtonsLabelling
 from neural import NeuralFunctions
 from imgs_manipulations import *
@@ -82,6 +83,7 @@ class Interface(tk.Frame):
         self.slider_opacity = 50
         self.slider_contourn = 50
         self.color_frame_over_center = "black"
+
         self.pencil_draw_bool = True
         self.polygon_draw_bool = False
         self.validate_contorn = False
@@ -89,6 +91,9 @@ class Interface(tk.Frame):
         self.bool_draw = False
         self.delete_contourn = False
         self.use_neural_network = False
+
+        self.ctrl_pressed_key = False
+
         self.eliminate_irrelevant_cnts = True
         self.path_save_img_rgb = "dataset/rgb"
         self.path_save_img_bin = "dataset/binario"
@@ -406,9 +411,42 @@ class Interface(tk.Frame):
             self.background_percent = float(1 - int(self.spinbox_backg.get()) / 100)
             self.iterator_recoil = 1.0
 
+    def keydown(self, event):
+        self.key_code = event.keycode
+        if self.key_code == 37:
+            print("Clicando")
+            self.ctrl_pressed_key = True
+            self.get_btn(event, "6")
+            self.draw_smth(event)
+
     def keyboard(self, event):
         self.key_pressed = event.char
         self.key_code = event.keycode
+        print(self.key_pressed)
+        if self.key_code == 37:
+            print("Clicando")
+            self.ctrl_pressed_key = True
+            self.get_btn(event, "6")
+            self.draw_smth(event)
+
+        if self.key_code == 37:
+            print("Clicando")
+            self.ctrl_pressed_key = True
+            self.get_btn(event, "6")
+            self.draw_smth(event)
+
+        if self.key_code == 37:
+            print("Clicando")
+            self.ctrl_pressed_key = True
+            self.get_btn(event, "6")
+            self.draw_smth(event)
+
+        if self.key_code == 37:
+            print("Clicando")
+            self.ctrl_pressed_key = True
+            self.get_btn(event, "6")
+            self.draw_smth(event)
+
 
         if self.key_code == 32 or self.key_code == 65:
             self.array_screen_neural = np.asarray(self.screen_main)
@@ -422,6 +460,7 @@ class Interface(tk.Frame):
             self.update_img(self.screen_main)
        
     def get_btn(self, event, key):
+
         self.event_btn = key
         if key == "0":
             self.name_tif = self.load_shp(0)[0]
@@ -664,6 +703,8 @@ class Interface(tk.Frame):
         self.canvas.bind("<Button 3>", self.get_right_click)
         self.canvas.bind("<B1-Motion>", self.draw_smth)
         self.frame_root.bind("<KeyPress>", self.keyboard)
+        self.frame_root.bind("<KeyPress>", KeyTracker().report_key_press)
+        self.frame_root.bind("<KeyRelease>", KeyTracker().key_tracker.report_key_release)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
 
     def change_color(self):
