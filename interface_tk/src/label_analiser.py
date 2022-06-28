@@ -459,7 +459,6 @@ class LabelAnaliser(tk.Frame):
 
     def remove_current_img(self, remove_img_answer):
         if remove_img_answer == "yes":
-            print(self.imgs_bin_array[self.change_imgs])
             os.system('rm ' + str(self.current_bin_name))
             os.system('rm ' + str(self.current_rgb_name))
             tk.messagebox.showinfo(message=" A Imagem " +  self.imgs_bin_array[self.change_imgs] + " Foi excluida!")
@@ -472,8 +471,8 @@ class LabelAnaliser(tk.Frame):
     def get_btn(self, event, key):
         if key == "Close":
             remove_img_answer = tk.messagebox.askquestion("Excluir Imagem?", "Você quer realmente excluir esta imagem?")
-            print(remove_img_answer)
             self.remove_current_img(remove_img_answer)
+            self.update_img(self.img_array_tk)
 
         if key == "6":
             self.pencil_draw_bool = True
