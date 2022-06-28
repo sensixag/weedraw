@@ -50,6 +50,8 @@ class LabelAnaliser(tk.Frame):
         self.current_value_saturation = tk.DoubleVar()
         self.current_value_contourn = tk.DoubleVar()
         self.current_value_opacity = tk.DoubleVar()
+        self.current_value_erase = tk.DoubleVar()
+        
         self.OptionList = ["Analisar os Resultados"]
         self.slider_pencil = 1
 
@@ -94,6 +96,7 @@ class LabelAnaliser(tk.Frame):
         self.set_slider_saturation = tk.Label(root, text="")
         self.set_slider_contourn = tk.Label(root, text="")
         self.set_slider_opacity = tk.Label(root, text="")
+        self.set_slider_erase = tk.Label(root, text="")
 
         # Tela inferior com botoes
         self.frame_below_center = tk.Frame(root)
@@ -122,8 +125,12 @@ class LabelAnaliser(tk.Frame):
         )
 
         self.label_contourn = tk.Label(self.frame_of_options)
-        self.label_contourn.place(relx=0.059, rely=0.247, height=21, width=79)
-        self.label_contourn.configure(text="Contorno:", fg=self.color_buttons_center, bg=self.color_frame_options)
+        self.label_contourn.place(relx=0.059, rely=0.247, height=21, width=50)
+        self.label_contourn.configure(text="Lapis:", fg=self.color_buttons_center, bg=self.color_frame_options)
+
+        self.label_erase = tk.Label(self.frame_of_options)
+        self.label_erase.place(relx=0.059, rely=0.356, height=21, width=73)
+        self.label_erase.configure(text="Borracha:", fg=self.color_buttons_center, bg=self.color_frame_options)
 
         self.canvas_logo = tk.Canvas(self.frame_of_options)
         self.canvas_logo.place(relx=0.04, rely=0.910, relheight=0.08, relwidth=0.94)
@@ -175,7 +182,27 @@ class LabelAnaliser(tk.Frame):
             variable=self.current_value_contourn,
         )
         self.slider_contourn.place(relx=0.098, rely=0.279, relheight=0.062, relwidth=0.8)
+
         self.slider_contourn.configure(
+            length="164",
+            orient="horizontal",
+            borderwidth="0",
+            troughcolor=self.intern_slider,
+            fg="white",
+            bg=self.background_slider,
+            highlightbackground=self.background_slider,
+        )
+
+        self.slider_erase = tk.Scale(
+            self.frame_of_options,
+            from_=1.0,
+            to=100.0,
+            command= self.slider_changed_erase,
+            variable=self.current_value_erase,
+        )
+        self.slider_erase.place(relx=0.098, rely=0.380, relheight=0.062, relwidth=0.8)
+
+        self.slider_erase.configure(
             length="164",
             orient="horizontal",
             borderwidth="0",
@@ -190,7 +217,7 @@ class LabelAnaliser(tk.Frame):
         self.frame.grid_columnconfigure(0, weight=1)
 
         self.button_save_image = tk.Checkbutton(self.frame_of_options, text="Salvar Modificações ", variable=self.bool_save_image, onvalue=1, offvalue=0, background=self.color_frame_options, bg='white')
-        self.button_save_image.place(x=20, y=320, width=165)
+        self.button_save_image.place(x=22, y=390, width=165)
 
         #self.canvas = Screen(tk, self.frame_over_center, self.screen_width, self.screen_height).define_canvas()
         image, _ = self.screen_main, self.draw = Draw().create_screen_to_draw(self.screen_width, self.screen_height)
@@ -206,11 +233,12 @@ class LabelAnaliser(tk.Frame):
         self.buttons.polygon_btn.bind("<Button-1>", partial(self.get_btn, key="9"))
         self.buttons.hide_layer_btn.bind("<Button-1>", partial(self.get_btn, key="8"))
         self.buttons.super_pixel_btn.bind("<Button-1>", partial(self.get_btn, key="10"))
+        self.buttons.close_btn.bind("<Button-1>", partial(self.get_btn, key="Close"))
         self.buttons.next_btn.bind("<Button-1>", partial(self.get_btn, key="Next"))
         self.buttons.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
         self.button_select_color = tk.Button(root, text="Cor para marcação", command=self.change_color)
-        self.button_select_color.place(relx=0.025, rely=0.375, height=43, width=165)
+        self.button_select_color.place(relx=0.025, rely=0.48, height=43, width=165)
         self.button_select_color.configure(bg='white')
 
         #self.img_canvas_id = self.canvas.create_image(0, 0, anchor='nw')
@@ -248,7 +276,8 @@ class LabelAnaliser(tk.Frame):
             if key == "1":
                 self.bool_draw = True
                 self.current_bin_name = self.imgs_bin_array[self.change_imgs]
-                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.current_rgb_name = self.imgs_rgb_array[self.change_imgs]
+                self.imgparcela = cv2.imread(self.current_rgb_name)
                 self.img_bin = cv2.imread(self.current_bin_name)
                 self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
 
@@ -281,7 +310,9 @@ class LabelAnaliser(tk.Frame):
                     self.change_imgs -=1
 
                 self.current_bin_name = self.imgs_bin_array[self.change_imgs]
-                self.imgparcela = cv2.imread(self.imgs_rgb_array[self.change_imgs])
+                self.current_rgb_name = self.imgs_rgb_array[self.change_imgs]                
+                
+                self.imgparcela = cv2.imread(self.current_rgb_name)
                 self.img_bin = cv2.imread(self.current_bin_name)
                 self.img_bin = cv2.resize(self.img_bin, (self.screen_width, self.screen_height))
 
@@ -345,10 +376,10 @@ class LabelAnaliser(tk.Frame):
             self.draw.line(
                 (self.old_x, self.old_y, self.lasx, self.lasy),
                 (0, 0, 0, 0),
-                width=int(self.slider_pencil / 2),
+                width=int(self.slider_erase / 2),
                 joint="curve",
             )
-            Offset = int(self.slider_pencil / 2)
+            Offset = int(self.slider_erase / 2)
             self.draw.ellipse(
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
                 (0, 0, 0, 0),
@@ -380,6 +411,10 @@ class LabelAnaliser(tk.Frame):
 
         self.update_img(self.screen_main)
         self.slider_saturation_old = self.slider_saturation
+
+    def slider_changed_erase(self, event):
+        self.slider_erase = self.current_value_erase.get()
+        self.set_slider_erase.configure(text=self.current_value_erase.get())
 
     def slider_changed_saturation(self, event):
         self.set_slider_saturation.configure(text=self.get_current_value_saturation())
@@ -422,7 +457,23 @@ class LabelAnaliser(tk.Frame):
         self.image_final = ImageTk.PhotoImage(self.image)
         self.canvas_obj.update_image_canvas(self.image)
 
+    def remove_current_img(self, remove_img_answer):
+        if remove_img_answer == "yes":
+            os.system('rm ' + str(self.current_bin_name))
+            os.system('rm ' + str(self.current_rgb_name))
+            tk.messagebox.showinfo(message=" A Imagem " +  self.imgs_bin_array[self.change_imgs] + " Foi excluida!")
+            self.imgs_rgb_array.remove(self.current_rgb_name)
+            self.imgs_bin_array.remove(self.current_bin_name)
+
+        elif remove_img_answer == "no":
+            tk.messagebox.showinfo(message="A Imagem Não Foi Excluida")
+
     def get_btn(self, event, key):
+        if key == "Close":
+            remove_img_answer = tk.messagebox.askquestion("Excluir Imagem?", "Você quer realmente excluir esta imagem?")
+            self.remove_current_img(remove_img_answer)
+            self.update_img(self.img_array_tk)
+
         if key == "6":
             self.pencil_draw_bool = True
             self.polygon_draw_bool = False
