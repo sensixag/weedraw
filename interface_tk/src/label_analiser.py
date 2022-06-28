@@ -457,22 +457,22 @@ class LabelAnaliser(tk.Frame):
         self.image_final = ImageTk.PhotoImage(self.image)
         self.canvas_obj.update_image_canvas(self.image)
 
-    def remove_current_img(self, remove_img):
-        if remove_img:
+    def remove_current_img(self, remove_img_answer):
+        if remove_img_answer == "yes":
             print(self.imgs_bin_array[self.change_imgs])
             os.system('rm ' + str(self.current_bin_name))
             os.system('rm ' + str(self.current_rgb_name))
-            tk.messagebox.showinfo(message="Imagem Excluida!!")
+            tk.messagebox.showinfo(message=" A Imagem " +  self.imgs_bin_array[self.change_imgs] + " Foi excluida!")
             self.imgs_rgb_array.remove(self.current_rgb_name)
             self.imgs_bin_array.remove(self.current_bin_name)
 
-        else:
-            tk.messagebox.showinfo(message="Imagem não Excluida")
+        elif remove_img_answer == "no":
+            tk.messagebox.showinfo(message="A Imagem Não Foi Excluida")
 
     def get_btn(self, event, key):
         if key == "Close":
-            print("Close")
             remove_img_answer = tk.messagebox.askquestion("Excluir Imagem?", "Você quer realmente excluir esta imagem?")
+            print(remove_img_answer)
             self.remove_current_img(remove_img_answer)
 
         if key == "6":
