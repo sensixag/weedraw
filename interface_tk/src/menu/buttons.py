@@ -67,6 +67,14 @@ class ButtonsLabelling:
             activebackground="#f9f9f9", borderwidth="2", text="Button", background=self.color_buttons_center
         )
 
+        self.close_icon = ImageTk.PhotoImage(file=r"../icons/trash.png")
+        self.close_btn = self.tk_menu.Button(self.frame, image=self.close_icon)
+        self.close_btn.place(relx=0.006, rely=0.92, height=43, width=43)
+        self.close_btn.configure(
+            activebackground="#f9f9f9", borderwidth="2", text="Button", background=self.color_buttons_center
+        )
+
+
         self.next_icon = ImageTk.PhotoImage(file=r"../icons/next.png")
         self.next_btn = self.tk_menu.Button(self.root, image=self.next_icon)
         self.next_btn.place(relx=0.957, rely=0.43, height=70, width=43)
@@ -76,3 +84,4 @@ class ButtonsLabelling:
         self.back_btn = self.tk_menu.Button(self.root, image=self.back_icon)
         self.back_btn.place(relx=0.183, rely=0.43, height=70, width=43)
         self.back_btn.configure(borderwidth="2", background="white")
+
