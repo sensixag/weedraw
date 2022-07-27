@@ -118,6 +118,8 @@ class Interface(tk.Frame):
         self.current_value_saturation = tk.DoubleVar()
         self.current_value_contourn = tk.DoubleVar()
         self.current_value_opacity = tk.DoubleVar()
+        self.current_value_erase = tk.DoubleVar()
+
         self.btn_int = tk.IntVar()
 
         self.var = tk.IntVar()
@@ -164,6 +166,8 @@ class Interface(tk.Frame):
         self.set_slider_saturation = tk.Label(root, text="")
         self.set_slider_contourn = tk.Label(root, text="")
         self.set_slider_opacity = tk.Label(root, text="")
+        self.set_slider_erase = tk.Label(root, text="")
+
 
         # Tela inferior com botoes
         self.frame_below_center = tk.Frame(root)
@@ -193,7 +197,11 @@ class Interface(tk.Frame):
 
         self.label_contourn = tk.Label(self.frame_of_options)
         self.label_contourn.place(relx=0.059, rely=0.247, height=21, width=79)
-        self.label_contourn.configure(text="Contorno:", fg=self.color_buttons_center, bg=self.color_frame_options)
+        self.label_contourn.configure(text="Lapis:", fg=self.color_buttons_center, bg=self.color_frame_options)
+
+        self.label_erase = tk.Label(self.frame_of_options)
+        self.label_erase.place(relx=0.059, rely=0.356, height=21, width=73)
+        self.label_erase.configure(text="Borracha:", fg=self.color_buttons_center, bg=self.color_frame_options)
 
         self.canvas_logo = tk.Canvas(self.frame_of_options)
         self.canvas_logo.place(relx=0.04, rely=0.910, relheight=0.08, relwidth=0.94)
@@ -254,6 +262,24 @@ class Interface(tk.Frame):
             bg=self.background_slider,
             highlightbackground=self.background_slider,
         )
+        self.slider_erase = tk.Scale(
+            self.frame_of_options,
+            from_=1.0,
+            to=100.0,
+            command= self.slider_changed_erase,
+            variable=self.current_value_erase,
+        )
+        self.slider_erase.place(relx=0.098, rely=0.380, relheight=0.062, relwidth=0.8)
+
+        self.slider_erase.configure(
+            length="164",
+            orient="horizontal",
+            borderwidth="0",
+            troughcolor=self.intern_slider,
+            fg="white",
+            bg=self.background_slider,
+            highlightbackground=self.background_slider,
+        )
 
         self.frame = tk.Frame(root, bd=2, relief=tk.SUNKEN)
         self.frame.grid_rowconfigure(0, weight=1)
@@ -277,7 +303,7 @@ class Interface(tk.Frame):
         self.buttons.back_btn.bind("<Button-1>", partial(self.get_btn, key="Back"))
 
         self.button_select_color = tk.Button(root, text="Cor para marcação", command=self.change_color, fg="white")
-        self.button_select_color.place(relx=0.025, rely=0.375, height=43, width=165)
+        self.button_select_color.place(relx=0.025, rely=0.48, height=43, width=165)
         self.button_select_color.configure(bg=self.color_background)
 
         #self.img_canvas_id = self.canvas.create_image(0, 0, anchor='nw')
@@ -375,7 +401,6 @@ class Interface(tk.Frame):
     # Metodos para receber os valores do slider de saturação
     def get_current_value_saturation(self):
         self.slider_saturation = int(self.current_value_saturation.get())
-        print(self.slider_saturation)
         if self.bool_draw:
             self.image_down = SatureImg().saturation(self.imgparcela, increment=self.slider_saturation)
 
@@ -384,6 +409,10 @@ class Interface(tk.Frame):
 
         self.update_img(self.screen_main)
         self.slider_saturation_old = self.slider_saturation
+
+    def slider_changed_erase(self, event):
+        self.slider_erase = self.current_value_erase.get()
+        self.set_slider_erase.configure(text=self.current_value_erase.get())
 
     def slider_changed_saturation(self, event):
         self.set_slider_saturation.configure(text=self.get_current_value_saturation())
@@ -739,10 +768,10 @@ class Interface(tk.Frame):
             self.draw.line(
                 (self.old_x, self.old_y, self.lasx, self.lasy),
                 (0, 0, 0, 0),
-                width=int(self.slider_pencil / 2),
+                width=int(self.slider_erase / 2),
                 joint="curve",
             )
-            Offset = int(self.slider_pencil / 2)
+            Offset = int(self.slider_erase / 2)
             self.draw.ellipse(
                 (self.lasx - Offset, self.lasy - Offset, self.lasx + Offset, self.lasy + Offset),
                 (0, 0, 0, 0),
@@ -766,7 +795,7 @@ class Interface(tk.Frame):
     def load_rgb_tif(self):
 
         path_rgb_shp = filedialog.askopenfilename(title="Selecione O Mosaico")
-        if path_rgb_shp.endswith("tif"):
+        if path_rgb_shp.endswith("tif") or path_rgb_shp.endswith("tiff"):
 
             self.mosaico = gdal.Open(path_rgb_shp)
             self.band_1 = self.mosaico.GetRasterBand(1)
