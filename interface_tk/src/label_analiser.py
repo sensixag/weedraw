@@ -459,9 +459,9 @@ class LabelAnaliser(tk.Frame):
 
     def remove_current_img(self, remove_img_answer):
         if remove_img_answer == "yes":
-            os.system('rm ' + str(self.current_bin_name))
-            os.system('rm ' + str(self.current_rgb_name))
-            tk.messagebox.showinfo(message=" A Imagem " +  self.imgs_bin_array[self.change_imgs] + " Foi excluida!")
+            os.remove(str(self.current_bin_name))
+            os.remove(str(self.current_rgb_name))
+            tk.messagebox.showinfo(message=" A Imagem " +  self.current_bin_name + " Foi excluida!")
             self.imgs_rgb_array.remove(self.current_rgb_name)
             self.imgs_bin_array.remove(self.current_bin_name)
 
